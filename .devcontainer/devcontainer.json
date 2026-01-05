@@ -1,0 +1,44 @@
+{
+    "name": "Java 21 & Gradle (MCEngine)",
+    "build": {
+        "dockerfile": "Dockerfile",
+        "context": ".."
+    },
+    "features": {
+        // [NEW] Overrides the base image tools to force "latest"
+        "ghcr.io/devcontainers/features/java:1": {
+            "version": "21",             // Keeps Java at 21 (as requested), but gets latest update
+            "installGradle": "true",
+            "gradleVersion": "latest",   // Forces absolute latest Gradle
+            "installMaven": "true",
+            "mavenVersion": "latest",    // Forces absolute latest Maven
+            "jdkDistro": "ms"            // Microsoft Build of OpenJDK
+        },
+        // [UPDATED] Forces latest Git
+        "ghcr.io/devcontainers/features/git:1": {
+            "version": "latest",
+            "ppa": "true"                // "true" gets updates faster than standard apt
+        },
+        "ghcr.io/devcontainers/features/github-cli:1": {}
+    },
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "java.home": "/usr/local/sdkman/candidates/java/current",
+                "java.compile.nullAnalysis.mode": "automatic"
+            },
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "vscjava.vscode-gradle",
+                "github.vscode-pull-request-github",
+                "github.vscode-github-actions",
+                "eamodio.gitlens",
+                "redhat.vscode-yaml",
+                "editorconfig.editorconfig"
+            ]
+        }
+    },
+    // Verifies the versions after the container starts
+    "postCreateCommand": "echo '--- VERSIONS ---' && java -version && gradle --version && git --version",
+    "remoteUser": "vscode"
+}
