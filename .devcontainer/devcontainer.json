@@ -5,7 +5,7 @@
         "context": ".."
     },
     "features": {
-        // [NEW] Overrides the base image tools to force "latest"
+        // Overrides the base image tools to force "latest" versions
         "ghcr.io/devcontainers/features/java:1": {
             "version": "21",             // Keeps Java at 21 (as requested), but gets latest update
             "installGradle": "true",
@@ -14,27 +14,40 @@
             "mavenVersion": "latest",    // Forces absolute latest Maven
             "jdkDistro": "ms"            // Microsoft Build of OpenJDK
         },
-        // [UPDATED] Forces latest Git
+        // Forces latest Git
         "ghcr.io/devcontainers/features/git:1": {
             "version": "latest",
             "ppa": "true"                // "true" gets updates faster than standard apt
         },
+        // Installs GitHub CLI (gh)
         "ghcr.io/devcontainers/features/github-cli:1": {}
     },
     "customizations": {
         "vscode": {
             "settings": {
+                // Sets the theme to "Dark Modern" automatically
+                "workbench.colorTheme": "Default Dark Modern",
+
+                // Java Path Configuration (managed by SDKMAN in the container)
                 "java.home": "/usr/local/sdkman/candidates/java/current",
                 "java.compile.nullAnalysis.mode": "automatic"
             },
             "extensions": [
+                // --- CORE JAVA EXTENSIONS ---
                 "vscjava.vscode-java-pack",
                 "vscjava.vscode-gradle",
+
+                // --- GITHUB INTEGRATION ---
                 "github.vscode-pull-request-github",
                 "github.vscode-github-actions",
                 "eamodio.gitlens",
+
+                // --- UTILITIES ---
                 "redhat.vscode-yaml",
-                "editorconfig.editorconfig"
+                "editorconfig.editorconfig",
+
+                // AI Assistant (Free Forever for Individuals)
+                "codeium.codeium"
             ]
         }
     },
