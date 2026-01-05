@@ -29,7 +29,7 @@
                 "workbench.colorTheme": "Default Dark Modern",
 
                 // Java Path Configuration (managed by SDKMAN in the container)
-                "java.home": "/usr/local/sdkman/candidates/java/current",
+                "java.jdt.ls.java.home": "/usr/local/sdkman/candidates/java/current",
                 "java.compile.nullAnalysis.mode": "automatic"
             },
             "extensions": [
