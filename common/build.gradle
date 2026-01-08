@@ -11,7 +11,7 @@ plugins {
 version = project.property('mceconomy-common.version')
 
 dependencies {
-    api project(':mceconomy-api')
+    api project(':api')
     compileOnly 'org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT'
 }
 

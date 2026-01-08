@@ -67,8 +67,8 @@ subprojects {
 // 4. PUBLISHING ORDER LOGIC (Fixed)
 gradle.projectsEvaluated {
     // 1. SAFE LOOKUP
-    def apiProject = findProject(':mceconomy-api')
-    def commonProject = findProject(':mceconomy-common')
+    def apiProject = findProject(':api')
+    def commonProject = findProject(':common')
 
     // 2. CHECK: Only enforce order if BOTH projects actually exist
     if (apiProject && commonProject) {
