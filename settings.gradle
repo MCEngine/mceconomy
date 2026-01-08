@@ -1,0 +1,9 @@
+rootProject.name = "mceconomy"
+
+// Helper function to include modules with a prefix
+def includeModule(String name) {
+    include "mceconomy-$name"
+}
+
+includeModule "api"
+includeModule "common"

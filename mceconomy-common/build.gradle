@@ -1,0 +1,67 @@
+/**
+ * MCEconomy Common Module
+ * Shared logic and internal utilities for the MCEngine ecosystem.
+ */
+plugins {
+    id 'java-library'
+    id 'com.gradleup.shadow'
+    id 'maven-publish'
+}
+
+version = project.property('mceconomy-common.version')
+
+dependencies {
+    api project(':mceconomy-api')
+    compileOnly 'org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT'
+}
+
+tasks.named('shadowJar') {
+    archiveBaseName = project.property('mceconomy-common.name')
+    archiveVersion = project.version
+    archiveClassifier = project.property('mceconomy-common.classifier')
+}
+
+// Define variables for cleaner URL construction
+def gitOwner = project.property('git-org.name')
+def gitRepo = project.property('git-org.repository')
+def gitUrl = project.property('mceconomy-common-artifact.url')
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            artifactId = project.property('mceconomy-common-artifact.id')
+            artifact shadowJar
+
+            pom {
+                name = project.property('mceconomy-common.name')
+                description = 'Shared logic and internal utilities for MCEconomy.'
+                url = gitUrl
+
+                developers {
+                    developer {
+                        id = 'jetsadawijit'
+                        url = 'https://jetsadawijit.github.io'
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:git://github.com/${gitOwner}/${gitRepo}.git"
+                    developerConnection = "scm:git:ssh://github.com/${gitOwner}/${gitRepo}.git"
+                    url = gitUrl
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/${gitOwner}/${gitRepo}")
+
+            credentials {
+                username = System.getenv("USER_GITHUB_NAME")
+                password = System.getenv("USER_GITHUB_TOKEN")
+            }
+        }
+    }
+}
