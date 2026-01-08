@@ -1,0 +1,85 @@
+/**
+ * MCEngine Root Configuration
+ * Central build logic for all MCEconomy modules.
+ */
+plugins {
+    id 'com.gradleup.shadow' version '9.3.1' apply false
+    id 'java'
+}
+
+// 1. DISABLE ROOT BUILD
+tasks.named('jar') {
+    enabled = false
+}
+
+allprojects {
+    // Uses the property from gradle.properties
+    group = project.property('project.group')
+    
+    repositories {
+        mavenCentral()
+        maven { 
+            name = 'spigotmc'
+            url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' 
+        }
+    }
+}
+
+subprojects {
+    apply plugin: 'java'
+    
+    java {
+        toolchain { languageVersion = JavaLanguageVersion.of(21) }
+    }
+
+    tasks.withType(JavaCompile).configureEach {
+        options.encoding = 'UTF-8'
+    }
+
+    // 2. DISABLE STANDARD JAR FOR SUBPROJECTS
+    tasks.named('jar') {
+        enabled = false
+    }
+
+    // 3. FORCE BUILD TO USE SHADOWJAR & FIX DEPENDENCIES
+    plugins.withId('com.gradleup.shadow') {
+        
+        // Make 'build' create the ShadowJar
+        tasks.named('assemble') {
+            dependsOn('shadowJar')
+        }
+
+        // --- THE CRITICAL FIX ---
+        // Tells Gradle: "When other projects need me, give them the ShadowJar"
+        configurations {
+            apiElements {
+                outgoing.artifacts.clear()
+                outgoing.artifact(tasks.named('shadowJar'))
+            }
+            runtimeElements {
+                outgoing.artifacts.clear()
+                outgoing.artifact(tasks.named('shadowJar'))
+            }
+        }
+    }
+}
+
+// 4. PUBLISHING ORDER LOGIC (Fixed)
+gradle.projectsEvaluated {
+    // 1. SAFE LOOKUP
+    def apiProject = findProject(':api')
+    def commonProject = findProject(':common')
+
+    // 2. CHECK: Only enforce order if BOTH projects actually exist
+    if (apiProject && commonProject) {
+        
+        // 3. ENFORCE ORDER USING TASK NAMES
+        // We use 'publish' (String) instead of the class to avoid import errors.
+        def apiPublish = apiProject.tasks.findByName('publish')
+        def commonPublish = commonProject.tasks.findByName('publish')
+
+        if (apiPublish && commonPublish) {
+            commonPublish.mustRunAfter(apiPublish)
+        }
+    }
+}
