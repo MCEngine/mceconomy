@@ -13,11 +13,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for removing coins from a player's balance.
  */
 public class HandleMinus implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -29,7 +25,6 @@ public class HandleMinus implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleMinus(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 
@@ -60,17 +55,24 @@ public class HandleMinus implements IEconomyCommandHandle {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-            provider.minusCoin(target.getUniqueId().toString(), coinType, amount);
-            
-            sender.sendMessage(Component.text()
-                .append(Component.text("Removed ", NamedTextColor.GREEN))
-                .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
-                .append(Component.text(" from ", NamedTextColor.GREEN))
-                .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text(".", NamedTextColor.GREEN))
-                .build());
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        
+        provider.minusCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
+            if (success) {
+                sender.sendMessage(Component.text()
+                    .append(Component.text("Removed ", NamedTextColor.GREEN))
+                    .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
+                    .append(Component.text(" from ", NamedTextColor.GREEN))
+                    .append(Component.text(targetName, NamedTextColor.WHITE))
+                    .append(Component.text(".", NamedTextColor.GREEN))
+                    .build());
+            } else {
+                sender.sendMessage(Component.text()
+                    .append(Component.text("Operation failed. ", NamedTextColor.RED))
+                    .append(Component.text(targetName, NamedTextColor.WHITE))
+                    .append(Component.text(" has insufficient funds.", NamedTextColor.RED))
+                    .build());
+            }
         });
     }
 

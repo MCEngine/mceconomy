@@ -34,7 +34,7 @@ public class MCEconomyTabCompleter implements TabCompleter {
 
     /**
      * Constructs a new MCEconomyTabCompleter.
-     * * @param manager The command manager instance to reference for subcommands.
+     * @param manager The command manager instance to reference for subcommands.
      */
     public MCEconomyTabCompleter(MCEconomyCommandManager manager) {
         this.manager = manager;
@@ -42,7 +42,7 @@ public class MCEconomyTabCompleter implements TabCompleter {
 
     /**
      * Handles the tab completion logic for the economy command.
-     * * @param sender  The source of the command.
+     * @param sender  The source of the command.
      * @param command The command being executed.
      * @param label   The alias of the command used.
      * @param args    The arguments passed to the command.
@@ -98,7 +98,7 @@ public class MCEconomyTabCompleter implements TabCompleter {
 
     /**
      * Filters a list of strings based on whether they start with the provided input (case-insensitive).
-     * * @param list  The list of strings to filter.
+     * @param list  The list of strings to filter.
      * @param input The current user input to match against.
      * @return A filtered list of strings.
      */

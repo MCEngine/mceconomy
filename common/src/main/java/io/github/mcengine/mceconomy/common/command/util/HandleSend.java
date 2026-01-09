@@ -14,11 +14,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for sending coins from one player to another.
  */
 public class HandleSend implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -30,7 +26,6 @@ public class HandleSend implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleSend(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 
@@ -62,28 +57,32 @@ public class HandleSend implements IEconomyCommandHandle {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-            
-            if (!target.hasPlayedBefore() && !target.isOnline()) {
-                player.sendMessage(Component.text()
-                    .append(Component.text("Player ", NamedTextColor.RED))
-                    .append(Component.text(targetName, NamedTextColor.WHITE))
-                    .append(Component.text(" not found.", NamedTextColor.RED))
-                    .build());
-                return;
-            }
-
-            provider.sendCoin(player.getUniqueId().toString(), target.getUniqueId().toString(), coinType, amount);
-            
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        
+        // Validation check before attempting DB transaction
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
             player.sendMessage(Component.text()
-                .append(Component.text("Sent ", NamedTextColor.GREEN))
-                .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
-                .append(Component.text(" to ", NamedTextColor.GREEN))
+                .append(Component.text("Player ", NamedTextColor.RED))
                 .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text(".", NamedTextColor.GREEN))
+                .append(Component.text(" not found.", NamedTextColor.RED))
                 .build());
-        });
+            return;
+        }
+
+        provider.sendCoin(player.getUniqueId().toString(), target.getUniqueId().toString(), coinType, amount)
+            .thenAccept(success -> {
+                if (success) {
+                    player.sendMessage(Component.text()
+                        .append(Component.text("Sent ", NamedTextColor.GREEN))
+                        .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
+                        .append(Component.text(" to ", NamedTextColor.GREEN))
+                        .append(Component.text(targetName, NamedTextColor.WHITE))
+                        .append(Component.text(".", NamedTextColor.GREEN))
+                        .build());
+                } else {
+                    player.sendMessage(Component.text("Transfer failed: Insufficient funds.", NamedTextColor.RED));
+                }
+            });
     }
 
     /**

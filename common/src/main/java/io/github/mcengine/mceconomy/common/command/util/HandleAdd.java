@@ -13,11 +13,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for adding coins to a player's balance.
  */
 public class HandleAdd implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -29,7 +25,6 @@ public class HandleAdd implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleAdd(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 
@@ -60,17 +55,20 @@ public class HandleAdd implements IEconomyCommandHandle {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-            provider.addCoin(target.getUniqueId().toString(), coinType, amount);
-            
-            sender.sendMessage(Component.text()
-                .append(Component.text("Added ", NamedTextColor.GREEN))
-                .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
-                .append(Component.text(" to ", NamedTextColor.GREEN))
-                .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text(".", NamedTextColor.GREEN))
-                .build());
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        
+        provider.addCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
+            if (success) {
+                sender.sendMessage(Component.text()
+                    .append(Component.text("Added ", NamedTextColor.GREEN))
+                    .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
+                    .append(Component.text(" to ", NamedTextColor.GREEN))
+                    .append(Component.text(targetName, NamedTextColor.WHITE))
+                    .append(Component.text(".", NamedTextColor.GREEN))
+                    .build());
+            } else {
+                sender.sendMessage(Component.text("Failed to add coins. Check console for database errors.", NamedTextColor.RED));
+            }
         });
     }
 

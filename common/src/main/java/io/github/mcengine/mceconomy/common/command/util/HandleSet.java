@@ -13,11 +13,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for setting a player's balance to a specific value.
  */
 public class HandleSet implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -29,7 +25,6 @@ public class HandleSet implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleSet(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 
@@ -60,17 +55,20 @@ public class HandleSet implements IEconomyCommandHandle {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-            provider.setCoin(target.getUniqueId().toString(), coinType, amount);
-            
-            sender.sendMessage(Component.text()
-                .append(Component.text("Set ", NamedTextColor.GREEN))
-                .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text("'s " + coinType + " to ", NamedTextColor.GREEN))
-                .append(Component.text(amount, NamedTextColor.WHITE))
-                .append(Component.text(".", NamedTextColor.GREEN))
-                .build());
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        
+        provider.setCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
+            if (success) {
+                sender.sendMessage(Component.text()
+                    .append(Component.text("Set ", NamedTextColor.GREEN))
+                    .append(Component.text(targetName, NamedTextColor.WHITE))
+                    .append(Component.text("'s " + coinType + " to ", NamedTextColor.GREEN))
+                    .append(Component.text(amount, NamedTextColor.WHITE))
+                    .append(Component.text(".", NamedTextColor.GREEN))
+                    .build());
+            } else {
+                sender.sendMessage(Component.text("Failed to set balance.", NamedTextColor.RED));
+            }
         });
     }
 
