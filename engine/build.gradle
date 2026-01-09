@@ -1,0 +1,68 @@
+/**
+ * MCEconomy Engine Module
+ * Primary implementation of the MCEconomy system for PaperMC.
+ */
+plugins {
+    id 'java-library'
+    id 'com.gradleup.shadow'
+    id 'maven-publish'
+}
+
+version = project.property('mceconomy-engine.version')
+
+dependencies {
+    api project(':api')
+    api project(':common')
+    compileOnly 'io.papermc.paper:paper-api:1.21.1-R0.1-SNAPSHOT'
+}
+
+tasks.named('shadowJar') {
+    archiveBaseName = project.property('mceconomy-engine.name')
+    archiveVersion = project.version
+    archiveClassifier = project.property('mceconomy-engine.classifier')
+}
+
+// Define variables for cleaner URL construction
+def gitOwner = project.property('git-org.name')
+def gitRepo = project.property('git-org.repository')
+def gitUrl = project.property('mceconomy-engine-artifact.url')
+
+publishing {
+    publications {
+        create('mavenJava', MavenPublication) {
+            artifactId = project.property('mceconomy-engine-artifact.id')
+            artifact shadowJar
+
+            pom {
+                name = project.property('mceconomy-engine.name')
+                description = 'The primary PaperMC engine implementation for MCEconomy.'
+                url = gitUrl
+
+                developers {
+                    developer {
+                        id = 'jetsadawijit'
+                        url = 'https://jetsadawijit.github.io'
+                    }
+                }
+
+                scm {
+                    connection = "scm:git:git://github.com/${gitOwner}/${gitRepo}.git"
+                    developerConnection = "scm:git:ssh://github.com/${gitOwner}/${gitRepo}.git"
+                    url = gitUrl
+                }
+            }
+        }
+    }
+
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/${gitOwner}/${gitRepo}")
+
+            credentials {
+                username = System.getenv("USER_GITHUB_NAME")
+                password = System.getenv("USER_GITHUB_TOKEN")
+            }
+        }
+    }
+}
