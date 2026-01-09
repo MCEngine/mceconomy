@@ -22,10 +22,14 @@ public class MCEconomyCommandManager implements CommandExecutor {
 
     /**
      * Registers a new subcommand handler.
+     * Prevents registration if a subcommand with the same name already exists.
      * @param name The subcommand name (e.g., "get").
      * @param handler The logic handler for that command.
      */
     public void register(String name, IEconomyCommandHandle handler) {
+        if (subcommands.containsKey(name.toLowerCase())) {
+            return;
+        }
         subcommands.put(name.toLowerCase(), handler);
     }
 
