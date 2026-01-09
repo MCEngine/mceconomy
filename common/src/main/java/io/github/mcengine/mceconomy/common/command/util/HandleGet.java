@@ -2,8 +2,9 @@ package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -20,11 +21,11 @@ public class HandleGet implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can check their balance.");
+            sender.sendMessage(Component.text("Only players can check their balance.", NamedTextColor.RED));
             return;
         }
         if (args.length < 1) {
-            sender.sendMessage(ChatColor.RED + "Usage: /economy get <coin type>");
+            sender.sendMessage(Component.text("Usage: /economy get <coin type>", NamedTextColor.RED));
             return;
         }
 
@@ -33,7 +34,10 @@ public class HandleGet implements IEconomyCommandHandle {
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             int balance = provider.getCoin(player.getUniqueId().toString(), coinType);
-            player.sendMessage(ChatColor.GREEN + "Your " + coinType + " balance: " + ChatColor.WHITE + balance);
+            player.sendMessage(Component.text()
+                .append(Component.text("Your " + coinType + " balance: ", NamedTextColor.GREEN))
+                .append(Component.text(balance, NamedTextColor.WHITE))
+                .build());
         });
     }
 

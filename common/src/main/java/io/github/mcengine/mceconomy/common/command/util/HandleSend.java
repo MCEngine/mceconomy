@@ -2,8 +2,9 @@ package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
-import org.bukkit.ChatColor;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
@@ -21,11 +22,11 @@ public class HandleSend implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(ChatColor.RED + "Only players can send coins.");
+            sender.sendMessage(Component.text("Only players can send coins.", NamedTextColor.RED));
             return;
         }
         if (args.length < 3) {
-            sender.sendMessage(ChatColor.RED + "Usage: /economy send <player> <coin type> <amount>");
+            sender.sendMessage(Component.text("Usage: /economy send <player> <coin type> <amount>", NamedTextColor.RED));
             return;
         }
 
@@ -37,7 +38,7 @@ public class HandleSend implements IEconomyCommandHandle {
         try { 
             amount = Integer.parseInt(args[2]); 
         } catch (NumberFormatException e) {
-            sender.sendMessage(ChatColor.RED + "Amount must be a number.");
+            sender.sendMessage(Component.text("Amount must be a number.", NamedTextColor.RED));
             return;
         }
 
@@ -46,12 +47,23 @@ public class HandleSend implements IEconomyCommandHandle {
             OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
             
             if (!target.hasPlayedBefore() && !target.isOnline()) {
-                player.sendMessage(ChatColor.RED + "Player " + ChatColor.WHITE + targetName + ChatColor.RED + " not found.");
+                player.sendMessage(Component.text()
+                    .append(Component.text("Player ", NamedTextColor.RED))
+                    .append(Component.text(targetName, NamedTextColor.WHITE))
+                    .append(Component.text(" not found.", NamedTextColor.RED))
+                    .build());
                 return;
             }
 
             provider.sendCoin(player.getUniqueId().toString(), target.getUniqueId().toString(), coinType, amount);
-            player.sendMessage(ChatColor.GREEN + "Sent " + ChatColor.WHITE + amount + " " + coinType + ChatColor.GREEN + " to " + ChatColor.WHITE + targetName + ChatColor.GREEN + ".");
+            
+            player.sendMessage(Component.text()
+                .append(Component.text("Sent ", NamedTextColor.GREEN))
+                .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
+                .append(Component.text(" to ", NamedTextColor.GREEN))
+                .append(Component.text(targetName, NamedTextColor.WHITE))
+                .append(Component.text(".", NamedTextColor.GREEN))
+                .build());
         });
     }
 

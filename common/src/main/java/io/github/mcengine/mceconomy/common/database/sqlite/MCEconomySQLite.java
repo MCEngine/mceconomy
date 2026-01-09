@@ -1,6 +1,8 @@
 package io.github.mcengine.mceconomy.common.database.sqlite;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -9,8 +11,7 @@ import java.sql.*;
 import java.util.UUID;
 
 /**
- * SQLite implementation for MCEconomy using local file storage.
- * Suitable for local servers or single-instance setups.
+ * SQLite implementation for MCEconomy.
  */
 public class MCEconomySQLite implements IMCEconomyDB {
     /**
@@ -140,7 +141,7 @@ public class MCEconomySQLite implements IMCEconomyDB {
         } else {
             Player player = Bukkit.getPlayer(UUID.fromString(playerUuid));
             if (player != null) {
-                player.sendMessage("You do not have enough " + coinType + "!");
+                player.sendMessage(Component.text("You do not have enough " + coinType + "!", NamedTextColor.RED));
             }
         }
     }
@@ -163,7 +164,7 @@ public class MCEconomySQLite implements IMCEconomyDB {
         } else {
             Player sender = Bukkit.getPlayer(UUID.fromString(senderUuid));
             if (sender != null) {
-                sender.sendMessage("Transfer failed: Not enough " + coinType + "!");
+                sender.sendMessage(Component.text("Transfer failed: Not enough " + coinType + "!", NamedTextColor.RED));
             }
         }
     }

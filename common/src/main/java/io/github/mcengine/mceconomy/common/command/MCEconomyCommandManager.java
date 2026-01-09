@@ -1,7 +1,8 @@
 package io.github.mcengine.mceconomy.common.command;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
-import org.bukkit.ChatColor;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -36,7 +37,7 @@ public class MCEconomyCommandManager implements CommandExecutor {
             String[] subArgs = (args.length <= 1) ? new String[0] : Arrays.copyOfRange(args, 1, args.length);
             handle.invoke(sender, subArgs);
         } else {
-            sender.sendMessage(ChatColor.RED + "Unknown subcommand. Use /economy help.");
+            sender.sendMessage(Component.text("Unknown subcommand. Use /economy help.", NamedTextColor.RED));
         }
         return true;
     }

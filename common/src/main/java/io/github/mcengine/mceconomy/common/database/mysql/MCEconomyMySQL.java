@@ -1,6 +1,8 @@
 package io.github.mcengine.mceconomy.common.database.mysql;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -9,7 +11,6 @@ import java.util.UUID;
 
 /**
  * MySQL implementation for MCEconomy.
- * Handles persistent data storage using a MySQL/MariaDB backend.
  */
 public class MCEconomyMySQL implements IMCEconomyDB {
     /**
@@ -143,7 +144,7 @@ public class MCEconomyMySQL implements IMCEconomyDB {
         } else {
             Player player = Bukkit.getPlayer(UUID.fromString(playerUuid));
             if (player != null) {
-                player.sendMessage("You do not have enough " + coinType + "!");
+                player.sendMessage(Component.text("You do not have enough " + coinType + "!", NamedTextColor.RED));
             }
         }
     }
@@ -166,7 +167,7 @@ public class MCEconomyMySQL implements IMCEconomyDB {
         } else {
             Player sender = Bukkit.getPlayer(UUID.fromString(senderUuid));
             if (sender != null) {
-                sender.sendMessage("Transfer failed: Not enough " + coinType + "!");
+                sender.sendMessage(Component.text("Transfer failed: Not enough " + coinType + "!", NamedTextColor.RED));
             }
         }
     }
