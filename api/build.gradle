@@ -4,7 +4,6 @@
  */
 plugins {
     id 'java-library'
-    id 'com.gradleup.shadow'
     id 'maven-publish'
 }
 
@@ -12,12 +11,6 @@ version = project.property('mceconomy-api.version')
 
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
-}
-
-tasks.named('shadowJar') {
-    archiveBaseName = project.property('mceconomy-api.name')
-    archiveVersion = project.version
-    archiveClassifier = project.property('mceconomy-api.classifier')
 }
 
 // Define variables for cleaner URL construction

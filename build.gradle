@@ -27,20 +27,35 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    
+    apply plugin: 'com.gradleup.shadow'
+
     // --- DYNAMIC VERSIONING LOGIC ---
-    // If running on Jenkins/CI (BUILD_NUMBER exists), use "1.0.0-dev.45"
-    // If running Locally (No BUILD_NUMBER), use "1.0.0-SNAPSHOT" from properties
     def propName = "mceconomy-${project.name}"
 
     if (project.hasProperty("${propName}.version")) {
         def baseVersion = project.property("${propName}.version")
         def defaultClassifier = project.property("${propName}.classifier")
-
+        
         if (System.getenv("BUILD_NUMBER") != null) {
             version = "${baseVersion}-dev.${System.getenv("BUILD_NUMBER")}"
         } else {
             version = "${baseVersion}-${defaultClassifier}"
+        }
+    }
+    // --------------------------------
+
+    // --- SHADOW JAR CONFIGURATION ---
+    tasks.named('shadowJar') {
+        // Automatically finds 'mceconomy-common.name', 'mceconomy-engine.name', etc.
+        if (project.hasProperty("${propName}.name")) {
+            archiveBaseName = project.property("${propName}.name")
+        }
+        
+        // Uses the version we calculated above
+        archiveVersion = project.version 
+
+        if (project.hasProperty("${propName}.classifier")) {
+            archiveClassifier = project.property("${propName}.classifier")
         }
     }
     // --------------------------------
