@@ -43,7 +43,6 @@ public class HandleSend implements IEconomyCommandHandle {
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            @SuppressWarnings("deprecation")
             OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
             
             if (!target.hasPlayedBefore() && !target.isOnline()) {

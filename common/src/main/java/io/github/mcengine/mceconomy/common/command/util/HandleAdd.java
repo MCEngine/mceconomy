@@ -41,7 +41,6 @@ public class HandleAdd implements IEconomyCommandHandle {
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            @SuppressWarnings("deprecation")
             OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
             provider.addCoin(target.getUniqueId().toString(), coinType, amount);
             

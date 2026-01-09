@@ -41,7 +41,6 @@ public class HandleMinus implements IEconomyCommandHandle {
         }
 
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            @SuppressWarnings("deprecation")
             OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
             provider.minusCoin(target.getUniqueId().toString(), coinType, amount);
             
