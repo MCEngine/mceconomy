@@ -31,10 +31,12 @@ subprojects {
     // --- DYNAMIC VERSIONING LOGIC ---
     // If running on Jenkins/CI (BUILD_NUMBER exists), use "1.0.0-dev.45"
     // If running Locally (No BUILD_NUMBER), use "1.0.0-SNAPSHOT" from properties
-    if (project.hasProperty("${project.name}.version")) {
-        def baseVersion = project.property("${project.name}.version")
-        def defaultClassifier = project.property("${project.name}.classifier")
-        
+    def propName = "mceconomy-${project.name}"
+
+    if (project.hasProperty("${propName}.version")) {
+        def baseVersion = project.property("${propName}.version")
+        def defaultClassifier = project.property("${propName}.classifier")
+
         if (System.getenv("BUILD_NUMBER") != null) {
             version = "${baseVersion}-dev.${System.getenv("BUILD_NUMBER")}"
         } else {
