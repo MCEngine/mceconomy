@@ -14,11 +14,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for sending coins from one player to another.
  */
 public class HandleSend implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -30,7 +26,6 @@ public class HandleSend implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleSend(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 

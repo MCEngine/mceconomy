@@ -13,11 +13,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for removing coins from a player's balance.
  */
 public class HandleMinus implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -29,7 +25,6 @@ public class HandleMinus implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleMinus(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 

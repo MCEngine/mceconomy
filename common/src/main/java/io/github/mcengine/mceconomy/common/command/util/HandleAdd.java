@@ -13,11 +13,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for adding coins to a player's balance.
  */
 public class HandleAdd implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -29,7 +25,6 @@ public class HandleAdd implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleAdd(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 
