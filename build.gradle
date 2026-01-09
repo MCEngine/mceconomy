@@ -27,45 +27,79 @@ allprojects {
 
 subprojects {
     apply plugin: 'java'
-    
+    apply plugin: 'com.gradleup.shadow'
+
     // --- DYNAMIC VERSIONING LOGIC ---
-    // If running on Jenkins/CI (BUILD_NUMBER exists), use "1.0.0-dev.45"
-    // If running Locally (No BUILD_NUMBER), use "1.0.0-SNAPSHOT" from properties
-    if (project.hasProperty("${project.name}.version")) {
-        def baseVersion = project.property("${project.name}.version")
-        def defaultClassifier = project.property("${project.name}.classifier")
-        
-        if (System.getenv("BUILD_NUMBER") != null) {
-            version = "${baseVersion}-dev.${System.getenv("BUILD_NUMBER")}"
+    def propName = "mceconomy-${project.name}"
+    
+    // 1. Detect Build Environment
+    String buildNum = System.getenv("BUILD_NUMBER")
+    boolean isDevBuild = (buildNum != null && !buildNum.isEmpty())
+
+    // 2. Calculate the Version String IMMEDIATELY
+    // We store this in a local variable so it can't be changed later.
+    String calculatedVersion = "unspecified"
+    
+    if (project.hasProperty("${propName}.version")) {
+        def baseVersion = project.property("${propName}.version")
+        def defaultClassifier = project.property("${propName}.classifier")
+
+        if (isDevBuild) {
+            // CI Strategy: "1.0.0-9-DEV"
+            calculatedVersion = "${baseVersion}-${buildNum}-DEV"
         } else {
-            version = "${baseVersion}-${defaultClassifier}"
+            // Local Strategy: "1.0.0-SNAPSHOT"
+            if (defaultClassifier && !defaultClassifier.toString().isEmpty()) {
+                calculatedVersion = "${baseVersion}-${defaultClassifier}"
+            } else {
+                calculatedVersion = "${baseVersion}"
+            }
         }
     }
-    // --------------------------------
+    
+    // 3. Apply it to the project (for metadata)
+    version = calculatedVersion
+    
+    // Debug Log
+    println "[${project.name}] Build detected: " + (isDevBuild ? "CI" : "Local")
+    println "[${project.name}] Final Version: ${calculatedVersion}"
+
+    // --- SHADOW JAR CONFIGURATION ---
+    tasks.named('shadowJar') {
+        // 1. Define finalBaseName
+        String finalBaseName = project.name
+        if (project.hasProperty("${propName}.name")) {
+            finalBaseName = project.property("${propName}.name")
+        }
+        
+        // 2. Set Base Name & Version
+        archiveBaseName.set(finalBaseName)
+        archiveVersion.set(calculatedVersion) // Use our variable, not project.version
+
+        // 3. Set Classifier (Metadata only)
+        archiveClassifier.set('')
+
+        // 4. FORCE FILE NAME (The Ultimate Fix)
+        // We use the 'calculatedVersion' variable directly. 
+        // Since this variable is a simple String we just created, Gradle cannot mess it up.
+        if (isDevBuild) {
+            archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
+        } else {
+            archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
+        }
+    }
 
     java {
         toolchain { languageVersion = JavaLanguageVersion.of(21) }
     }
-
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
-
-    // 2. DISABLE STANDARD JAR FOR SUBPROJECTS
     tasks.named('jar') {
         enabled = false
     }
-
-    // 3. FORCE BUILD TO USE SHADOWJAR & FIX DEPENDENCIES
     plugins.withId('com.gradleup.shadow') {
-        
-        // Make 'build' create the ShadowJar
-        tasks.named('assemble') {
-            dependsOn('shadowJar')
-        }
-
-        // --- THE CRITICAL FIX ---
-        // Tells Gradle: "When other projects need me, give them the ShadowJar"
+        tasks.named('assemble') { dependsOn('shadowJar') }
         configurations {
             apiElements {
                 outgoing.artifacts.clear()
