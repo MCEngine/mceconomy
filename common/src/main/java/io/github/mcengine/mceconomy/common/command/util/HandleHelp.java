@@ -3,6 +3,8 @@ package io.github.mcengine.mceconomy.common.command.util;
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.event.ClickEvent;
+import net.kyori.adventure.text.event.HoverEvent;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextDecoration;
 import org.bukkit.command.CommandSender;
@@ -28,6 +30,7 @@ public class HandleHelp implements IEconomyCommandHandle {
 
     /**
      * Executes the help command logic.
+     * Displays an interactive list of commands that players can click to autofill.
      * @param sender The sender of the command.
      * @param args The command arguments.
      */
@@ -42,8 +45,14 @@ public class HandleHelp implements IEconomyCommandHandle {
             if (name.equalsIgnoreCase("help")) continue;
 
             if (handle.getPermission() == null || sender.hasPermission(handle.getPermission())) {
+                String fullCommand = "/economy " + name;
+
                 sender.sendMessage(Component.text()
-                    .append(Component.text("/economy " + name + " ", NamedTextColor.YELLOW))
+                    .append(Component.text(fullCommand + " ", NamedTextColor.YELLOW)
+                        // Click to autofill the command in the chat bar
+                        .clickEvent(ClickEvent.suggestCommand(fullCommand + " "))
+                        // Show a tooltip when hovering
+                        .hoverEvent(HoverEvent.showText(Component.text("Click to autofill command", NamedTextColor.GREEN))))
                     .append(Component.text(handle.getHelp(), NamedTextColor.GRAY))
                     .build());
             }
