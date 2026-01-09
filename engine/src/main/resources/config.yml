@@ -1,0 +1,17 @@
+db:
+  # Connection type: 'sqlite' (local file) or 'mysql' (external database)
+  type: sqlite
+
+  # Settings for local SQLite database
+  sqlite:
+    # The name of the database file inside the plugin folder
+    path: mceconomy.db
+  
+  # Settings for external MySQL/MariaDB database
+  mysql:
+    host: localhost
+    port: "3306"
+    database: mceconomy
+    user: root
+    password: mceconomy
+    ssl: "false"
