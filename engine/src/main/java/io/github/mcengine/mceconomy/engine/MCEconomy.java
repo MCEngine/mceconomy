@@ -15,10 +15,25 @@ import org.bukkit.plugin.java.JavaPlugin;
  */
 public class MCEconomy extends JavaPlugin {
 
+    /**
+     * The provider handling database operations and coin logic.
+     */
     private MCEconomyProvider provider;
+
+    /**
+     * The manager handling subcommand registration and execution.
+     */
     private MCEconomyCommandManager commandManager;
+
+    /**
+     * The manager handling event listener registration.
+     */
     private MCEconomyListenerManager listenerManager;
 
+    /**
+     * Called when the plugin is enabled.
+     * Initializes configuration, core components, services, and registers handlers.
+     */
     @Override
     public void onEnable() {
         // 1. Initialize Configuration
@@ -43,6 +58,10 @@ public class MCEconomy extends JavaPlugin {
         getLogger().info("MCEconomy Engine has been enabled!");
     }
 
+    /**
+     * Called when the plugin is disabled.
+     * Ensures database connections are closed properly.
+     */
     @Override
     public void onDisable() {
         // Shutdown database connections
@@ -72,21 +91,24 @@ public class MCEconomy extends JavaPlugin {
     }
 
     /**
-     * @return The active economy provider.
+     * Gets the active economy provider.
+     * @return The MCEconomyProvider instance.
      */
     public MCEconomyProvider getProvider() {
         return this.provider;
     }
 
     /**
-     * @return The command manager for subcommands.
+     * Gets the command manager for subcommands.
+     * @return The MCEconomyCommandManager instance.
      */
     public MCEconomyCommandManager getCommandManager() {
         return this.commandManager;
     }
 
     /**
-     * @return The listener manager for internal events.
+     * Gets the listener manager for internal events.
+     * @return The MCEconomyListenerManager instance.
      */
     public MCEconomyListenerManager getListenerManager() {
         return this.listenerManager;
