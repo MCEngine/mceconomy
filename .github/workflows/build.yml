@@ -9,6 +9,13 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    
+    # --- FIX START ---
+    # Tell all 'run' steps to start inside the 'mceconomy' folder
+    defaults:
+      run:
+        working-directory: ./mceconomy
+    # --- FIX END ---
 
     steps:
       # 1. Check out the code
@@ -22,25 +29,25 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
-      # 3. Grant execute permission for gradlew (Linux/Mac)
+      # 3. Grant execute permission
+      # Now this looks in ./mceconomy/gradlew automatically
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       # 4. Build with Gradle
-      # THIS IS THE IMPORTANT PART: We map the GitHub run number to "BUILD_NUMBER"
       - name: Build with Gradle
         run: ./gradlew clean build shadowJar
         env:
           BUILD_NUMBER: ${{ github.run_number }}
 
-      # 5. Save the JARs so you can download them
-      # This grabs the 'shadowJar' from all subprojects (api, common, engine)
+      # 5. Save the JARs
+      # We also need to update the path to include 'mceconomy/'
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: MCEngine-Build-${{ github.run_number }}
           path: |
-            */build/libs/*-all.jar
-            */build/libs/*.jar
-            !*/build/libs/*-plain.jar
+            mceconomy/*/build/libs/*-all.jar
+            mceconomy/*/build/libs/*.jar
+            !mceconomy/*/build/libs/*-plain.jar
           retention-days: 1
