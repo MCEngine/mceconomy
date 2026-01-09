@@ -35,7 +35,8 @@ subprojects {
     // 1. Detect if we have a Build Number (passed via ENV variable)
     String buildNum = System.getenv("BUILD_NUMBER")
     boolean isDevBuild = (buildNum != null)
-    
+    println "Debug Build: ${isDevBuild} | Build Number: ${buildNum}"
+
     if (project.hasProperty("${propName}.version")) {
         def baseVersion = project.property("${propName}.version")
         def defaultClassifier = project.property("${propName}.classifier")
