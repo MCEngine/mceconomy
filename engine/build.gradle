@@ -1,6 +1,6 @@
 /**
- * MCEconomy API Module
- * Public interfaces for the MCEngine ecosystem.
+ * MCEconomy Engine Module
+ * Primary implementation of the MCEconomy system for PaperMC.
  */
 plugins {
     id 'java-library'
@@ -8,32 +8,34 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.property('mceconomy-api.version')
+version = project.property('mceconomy-engine.version')
 
 dependencies {
+    api project(':api')
+    api project(':common')
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
 }
 
 tasks.named('shadowJar') {
-    archiveBaseName = project.property('mceconomy-api.name')
+    archiveBaseName = project.property('mceconomy-engine.name')
     archiveVersion = project.version
-    archiveClassifier = project.property('mceconomy-api.classifier')
+    archiveClassifier = project.property('mceconomy-engine.classifier')
 }
 
 // Define variables for cleaner URL construction
 def gitOwner = project.property('git-org.name')
 def gitRepo = project.property('git-org.repository')
-def gitUrl = project.property('mceconomy-api-artifact.url')
+def gitUrl = project.property('mceconomy-engine-artifact.url')
 
 publishing {
     publications {
         create('mavenJava', MavenPublication) {
-            artifactId = project.property('mceconomy-api-artifact.id')
+            artifactId = project.property('mceconomy-engine-artifact.id')
             artifact shadowJar
 
             pom {
-                name = project.property('mceconomy-api.name')
-                description = project.property('mceconomy-api-artifact.description')
+                name = project.property('mceconomy-engine.name')
+                description = project.property('mceconomy-engine-artifact.description')
                 url = gitUrl
 
                 developers {
@@ -62,5 +64,23 @@ publishing {
                 password = System.getenv("USER_GITHUB_TOKEN")
             }
         }
+    }
+}
+
+/**
+ * Process resources (plugin.yml) and replace placeholders with gradle properties.
+ */
+processResources {
+    def props = [
+        'engine_name'       : project.property('mceconomy-engine.name'),
+        'project_group'     : project.group,
+        'engine_description': project.property('mceconomy-engine-artifact.description'),
+        'engine_version'    : project.version,
+        'engine_website'    : project.property('mceconomy-engine-artifact.url')
+    ]
+    inputs.properties(props)
+    filteringCharset 'UTF-8'
+    filesMatching('plugin.yml') {
+        expand props
     }
 }

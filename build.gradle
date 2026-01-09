@@ -18,9 +18,9 @@ allprojects {
     
     repositories {
         mavenCentral()
-        maven { 
-            name = 'spigotmc'
-            url = 'https://hub.spigotmc.org/nexus/content/repositories/snapshots/' 
+        maven {
+            name = 'papermc'
+            url = 'https://repo.papermc.io/repository/maven-public/'
         }
     }
 }
@@ -64,22 +64,28 @@ subprojects {
     }
 }
 
-// 4. PUBLISHING ORDER LOGIC (Fixed)
+// 4. PUBLISHING ORDER LOGIC
 gradle.projectsEvaluated {
     // 1. SAFE LOOKUP
     def apiProject = findProject(':api')
     def commonProject = findProject(':common')
+    def engineProject = findProject(':engine')
 
-    // 2. CHECK: Only enforce order if BOTH projects actually exist
+    // 2. ENFORCE ORDER: API -> Common -> Engine
     if (apiProject && commonProject) {
-        
-        // 3. ENFORCE ORDER USING TASK NAMES
-        // We use 'publish' (String) instead of the class to avoid import errors.
         def apiPublish = apiProject.tasks.findByName('publish')
         def commonPublish = commonProject.tasks.findByName('publish')
 
         if (apiPublish && commonPublish) {
             commonPublish.mustRunAfter(apiPublish)
+            
+            // If engine exists, it must run after common (which already runs after api)
+            if (engineProject) {
+                def enginePublish = engineProject.tasks.findByName('publish')
+                if (enginePublish) {
+                    enginePublish.mustRunAfter(commonPublish)
+                }
+            }
         }
     }
 }

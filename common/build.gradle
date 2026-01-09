@@ -12,7 +12,7 @@ version = project.property('mceconomy-common.version')
 
 dependencies {
     api project(':api')
-    compileOnly 'org.spigotmc:spigot-api:1.21-R0.1-SNAPSHOT'
+    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
 }
 
 tasks.named('shadowJar') {
@@ -34,7 +34,7 @@ publishing {
 
             pom {
                 name = project.property('mceconomy-common.name')
-                description = 'Shared logic and internal utilities for MCEconomy.'
+                project.property('mceconomy-common-artifact.description')
                 url = gitUrl
 
                 developers {

@@ -2,6 +2,7 @@
 .gradle/
 build/
 /bin/
+bin/
 !gradle/wrapper/gradle-wrapper.jar
 
 # --- [ Java / IDEs ] ---

@@ -1,0 +1,22 @@
+name: ${engine_name}
+main: ${project_group}.mceconomy.engine.MCEconomy
+description: ${engine_description}
+version: ${engine_version}
+website: ${engine_website}
+api-version: '1.21'
+
+commands:
+  economy:
+    description: Main command for MCEconomy.
+    aliases: [eco]
+
+permissions:
+  mceconomy.add.coin:
+    description: Allows adding coins to a player's balance.
+    default: op
+  mceconomy.minus.coin:
+    description: Allows removing coins from a player's balance.
+    default: op
+  mceconomy.set.coin:
+    description: Allows setting a player's coin balance.
+    default: op
