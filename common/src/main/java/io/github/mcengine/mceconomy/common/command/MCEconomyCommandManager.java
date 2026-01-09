@@ -15,6 +15,9 @@ import java.util.Map;
  * Manages the registration and execution of economy subcommands.
  */
 public class MCEconomyCommandManager implements CommandExecutor {
+    /**
+     * Storage for registered subcommand handles, keyed by their name.
+     */
     private final Map<String, IEconomyCommandHandle> subcommands = new HashMap<>();
 
     /**
@@ -26,6 +29,14 @@ public class MCEconomyCommandManager implements CommandExecutor {
         subcommands.put(name.toLowerCase(), handler);
     }
 
+    /**
+     * Routes the base command to the appropriate subcommand handler.
+     * @param sender Source of the command.
+     * @param command Command which was executed.
+     * @param label Alias of the command which was used.
+     * @param args Passed command arguments.
+     * @return true always to indicate the command was handled.
+     */
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         // Default to help if no args provided
@@ -42,6 +53,10 @@ public class MCEconomyCommandManager implements CommandExecutor {
         return true;
     }
 
+    /**
+     * Retrieves the map of all registered subcommands.
+     * @return A map containing subcommand names and their respective handles.
+     */
     public Map<String, IEconomyCommandHandle> getSubcommands() {
         return subcommands;
     }

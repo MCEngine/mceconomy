@@ -9,15 +9,35 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
+/**
+ * Command handler for adding coins to a player's balance.
+ */
 public class HandleAdd implements IEconomyCommandHandle {
+    /**
+     * The plugin instance for scheduling tasks.
+     */
     private final Plugin plugin;
+    
+    /**
+     * The economy provider for data operations.
+     */
     private final MCEconomyProvider provider;
 
+    /**
+     * Constructs a new HandleAdd instance.
+     * @param plugin The plugin instance.
+     * @param provider The economy provider.
+     */
     public HandleAdd(Plugin plugin, MCEconomyProvider provider) {
         this.plugin = plugin;
         this.provider = provider;
     }
 
+    /**
+     * Executes the add command logic.
+     * @param sender The sender of the command.
+     * @param args The command arguments.
+     */
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mceconomy.add.coin")) {
@@ -54,11 +74,17 @@ public class HandleAdd implements IEconomyCommandHandle {
         });
     }
 
+    /**
+     * @return The help description for the add command.
+     */
     @Override
     public String getHelp() {
         return "<player> <coin type> <amount> - Admin Add coins";
     }
 
+    /**
+     * @return The permission node required for this command.
+     */
     @Override
     public String getPermission() {
         return "mceconomy.add.coin";

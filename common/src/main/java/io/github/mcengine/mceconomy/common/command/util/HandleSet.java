@@ -9,15 +9,35 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.plugin.Plugin;
 
+/**
+ * Command handler for setting a player's balance to a specific value.
+ */
 public class HandleSet implements IEconomyCommandHandle {
+    /**
+     * The plugin instance for scheduling tasks.
+     */
     private final Plugin plugin;
+    
+    /**
+     * The economy provider for data operations.
+     */
     private final MCEconomyProvider provider;
 
+    /**
+     * Constructs a new HandleSet instance.
+     * @param plugin The plugin instance.
+     * @param provider The economy provider.
+     */
     public HandleSet(Plugin plugin, MCEconomyProvider provider) {
         this.plugin = plugin;
         this.provider = provider;
     }
 
+    /**
+     * Executes the set command logic.
+     * @param sender The sender of the command.
+     * @param args The command arguments.
+     */
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mceconomy.set.coin")) {
@@ -63,7 +83,7 @@ public class HandleSet implements IEconomyCommandHandle {
     }
 
     /**
-     * @return The permission node required to set coins.
+     * @return The permission node required for this command.
      */
     @Override
     public String getPermission() {

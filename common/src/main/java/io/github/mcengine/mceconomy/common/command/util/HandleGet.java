@@ -9,15 +9,35 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+/**
+ * Command handler for retrieving a player's balance.
+ */
 public class HandleGet implements IEconomyCommandHandle {
+    /**
+     * The plugin instance for scheduling tasks.
+     */
     private final Plugin plugin;
+    
+    /**
+     * The economy provider for data operations.
+     */
     private final MCEconomyProvider provider;
 
+    /**
+     * Constructs a new HandleGet instance.
+     * @param plugin The plugin instance.
+     * @param provider The economy provider.
+     */
     public HandleGet(Plugin plugin, MCEconomyProvider provider) {
         this.plugin = plugin;
         this.provider = provider;
     }
 
+    /**
+     * Executes the get command logic.
+     * @param sender The sender of the command.
+     * @param args The command arguments.
+     */
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {

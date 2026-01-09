@@ -12,6 +12,16 @@ public interface IEconomyCommandHandle {
      * @param args The arguments passed (clipped array).
      */
     void invoke(CommandSender sender, String[] args);
+
+    /**
+     * Retrieves the help description for the command.
+     * @return A string describing usage and purpose.
+     */
     String getHelp();
+
+    /**
+     * Retrieves the permission node required to execute the command.
+     * @return The permission string, or null if no permission is required.
+     */
     String getPermission();
 }

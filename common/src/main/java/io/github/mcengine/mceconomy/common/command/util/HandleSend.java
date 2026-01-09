@@ -10,15 +10,35 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
+/**
+ * Command handler for sending coins from one player to another.
+ */
 public class HandleSend implements IEconomyCommandHandle {
+    /**
+     * The plugin instance for scheduling tasks.
+     */
     private final Plugin plugin;
+    
+    /**
+     * The economy provider for data operations.
+     */
     private final MCEconomyProvider provider;
 
+    /**
+     * Constructs a new HandleSend instance.
+     * @param plugin The plugin instance.
+     * @param provider The economy provider.
+     */
     public HandleSend(Plugin plugin, MCEconomyProvider provider) {
         this.plugin = plugin;
         this.provider = provider;
     }
 
+    /**
+     * Executes the send command logic.
+     * @param sender The sender of the command.
+     * @param args The command arguments.
+     */
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
@@ -75,7 +95,7 @@ public class HandleSend implements IEconomyCommandHandle {
     }
 
     /**
-     * @return null as this command is available to all players by default.
+     * @return null as send is available to all players.
      */
     @Override
     public String getPermission() {
