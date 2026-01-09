@@ -32,61 +32,74 @@ subprojects {
     // --- DYNAMIC VERSIONING LOGIC ---
     def propName = "mceconomy-${project.name}"
     
-    // 1. Detect if we have a Build Number (passed via ENV variable)
+    // 1. Detect Build Environment
     String buildNum = System.getenv("BUILD_NUMBER")
-    boolean isDevBuild = (buildNum != null)
-    println "Debug Build: ${isDevBuild} | Build Number: ${buildNum}"
+    boolean isDevBuild = (buildNum != null && !buildNum.isEmpty())
 
+    // 2. Calculate the Version String IMMEDIATELY
+    // We store this in a local variable so it can't be changed later.
+    String calculatedVersion = "unspecified"
+    
     if (project.hasProperty("${propName}.version")) {
         def baseVersion = project.property("${propName}.version")
         def defaultClassifier = project.property("${propName}.classifier")
 
         if (isDevBuild) {
-            // CI Build: "1.0.0-dev.9"
-            version = "${baseVersion}-dev.${buildNum}"
+            // CI Strategy: "1.0.0-9-DEV"
+            calculatedVersion = "${baseVersion}-${buildNum}-DEV"
         } else {
-            // Local Build: "1.0.0-SNAPSHOT"
-            version = "${baseVersion}-${defaultClassifier}"
+            // Local Strategy: "1.0.0-SNAPSHOT"
+            if (defaultClassifier && !defaultClassifier.toString().isEmpty()) {
+                calculatedVersion = "${baseVersion}-${defaultClassifier}"
+            } else {
+                calculatedVersion = "${baseVersion}"
+            }
         }
     }
-    // --------------------------------
+    
+    // 3. Apply it to the project (for metadata)
+    version = calculatedVersion
+    
+    // Debug Log
+    println "[${project.name}] Build detected: " + (isDevBuild ? "CI" : "Local")
+    println "[${project.name}] Final Version: ${calculatedVersion}"
 
     // --- SHADOW JAR CONFIGURATION ---
     tasks.named('shadowJar') {
-        // 1. Set the Name (e.g., "MCEconomy")
+        // 1. Define finalBaseName
+        String finalBaseName = project.name
         if (project.hasProperty("${propName}.name")) {
-            archiveBaseName = project.property("${propName}.name")
+            finalBaseName = project.property("${propName}.name")
         }
         
-        // 2. Set the Version (e.g., "1.0.0-dev.9")
-        archiveVersion = project.version 
+        // 2. Set Base Name & Version
+        archiveBaseName.set(finalBaseName)
+        archiveVersion.set(calculatedVersion) // Use our variable, not project.version
 
-        // 3. Clear the Classifier for Dev Builds
-        // Result: "MCEconomy-1.0.0-dev.9.jar" (Clean!)
-        if (!isDevBuild && project.hasProperty("${propName}.classifier")) {
-            archiveClassifier = project.property("${propName}.classifier")
+        // 3. Set Classifier (Metadata only)
+        archiveClassifier.set('')
+
+        // 4. FORCE FILE NAME (The Ultimate Fix)
+        // We use the 'calculatedVersion' variable directly. 
+        // Since this variable is a simple String we just created, Gradle cannot mess it up.
+        if (isDevBuild) {
+            archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
         } else {
-            archiveClassifier = '' 
+            archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
         }
     }
-    // --------------------------------
 
     java {
         toolchain { languageVersion = JavaLanguageVersion.of(21) }
     }
-
     tasks.withType(JavaCompile).configureEach {
         options.encoding = 'UTF-8'
     }
-
     tasks.named('jar') {
         enabled = false
     }
-
     plugins.withId('com.gradleup.shadow') {
-        tasks.named('assemble') {
-            dependsOn('shadowJar')
-        }
+        tasks.named('assemble') { dependsOn('shadowJar') }
         configurations {
             apiElements {
                 outgoing.artifacts.clear()
