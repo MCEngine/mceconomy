@@ -52,6 +52,8 @@ public class HandleGet implements IEconomyCommandHandle {
         Player player = (Player) sender;
         String coinType = args[0].toLowerCase();
 
+        // Note: getCoin is synchronous in the Provider but hits the database.
+        // We run it async to prevent main thread lag.
         Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             int balance = provider.getCoin(player.getUniqueId().toString(), coinType);
             player.sendMessage(Component.text()

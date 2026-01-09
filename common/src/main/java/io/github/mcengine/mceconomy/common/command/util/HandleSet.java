@@ -60,17 +60,20 @@ public class HandleSet implements IEconomyCommandHandle {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-            provider.setCoin(target.getUniqueId().toString(), coinType, amount);
-            
-            sender.sendMessage(Component.text()
-                .append(Component.text("Set ", NamedTextColor.GREEN))
-                .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text("'s " + coinType + " to ", NamedTextColor.GREEN))
-                .append(Component.text(amount, NamedTextColor.WHITE))
-                .append(Component.text(".", NamedTextColor.GREEN))
-                .build());
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        
+        provider.setCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
+            if (success) {
+                sender.sendMessage(Component.text()
+                    .append(Component.text("Set ", NamedTextColor.GREEN))
+                    .append(Component.text(targetName, NamedTextColor.WHITE))
+                    .append(Component.text("'s " + coinType + " to ", NamedTextColor.GREEN))
+                    .append(Component.text(amount, NamedTextColor.WHITE))
+                    .append(Component.text(".", NamedTextColor.GREEN))
+                    .build());
+            } else {
+                sender.sendMessage(Component.text("Failed to set balance.", NamedTextColor.RED));
+            }
         });
     }
 

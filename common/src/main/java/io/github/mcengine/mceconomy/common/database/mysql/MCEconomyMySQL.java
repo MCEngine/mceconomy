@@ -1,13 +1,8 @@
 package io.github.mcengine.mceconomy.common.database.mysql;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
-import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import java.sql.*;
-import java.util.UUID;
 
 /**
  * MySQL implementation for MCEconomy.
@@ -63,15 +58,18 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      * Uses INSERT IGNORE to handle existing primary keys gracefully.
      *
      * @param playerUuid The UUID of the player to verify.
+     * @return true if the operation executed successfully, false if a SQL error occurred.
      */
     @Override
-    public void ensurePlayerExist(String playerUuid) {
+    public boolean ensurePlayerExist(String playerUuid) {
         String sql = "INSERT IGNORE INTO mceconomy (player_uuid) VALUES (?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, playerUuid);
             pstmt.executeUpdate();
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -102,17 +100,20 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      * @param playerUuid The UUID of the player.
      * @param coinType   The column name.
      * @param amount     The new value to set.
+     * @return true if the update was successful, false on error.
      */
     @Override
-    public void setCoin(String playerUuid, String coinType, int amount) {
+    public boolean setCoin(String playerUuid, String coinType, int amount) {
         ensurePlayerExist(playerUuid);
         String sql = "UPDATE mceconomy SET " + coinType + " = ? WHERE player_uuid = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, amount);
             pstmt.setString(2, playerUuid);
             pstmt.executeUpdate();
+            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
     }
 
@@ -122,10 +123,11 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      * @param playerUuid The UUID of the player.
      * @param coinType   The column name.
      * @param amount     The amount to add.
+     * @return true if successful, false on error.
      */
     @Override
-    public void addCoin(String playerUuid, String coinType, int amount) {
-        setCoin(playerUuid, coinType, getCoin(playerUuid, coinType) + amount);
+    public boolean addCoin(String playerUuid, String coinType, int amount) {
+        return setCoin(playerUuid, coinType, getCoin(playerUuid, coinType) + amount);
     }
 
     /**
@@ -135,18 +137,15 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      * @param playerUuid The UUID of the player.
      * @param coinType   The column name.
      * @param amount     The amount to subtract.
+     * @return true if transaction succeeded, false if insufficient funds or error.
      */
     @Override
-    public void minusCoin(String playerUuid, String coinType, int amount) {
+    public boolean minusCoin(String playerUuid, String coinType, int amount) {
         int currentBalance = getCoin(playerUuid, coinType);
         if (currentBalance >= amount) {
-            setCoin(playerUuid, coinType, currentBalance - amount);
-        } else {
-            Player player = Bukkit.getPlayer(UUID.fromString(playerUuid));
-            if (player != null) {
-                player.sendMessage(Component.text("You do not have enough " + coinType + "!", NamedTextColor.RED));
-            }
+            return setCoin(playerUuid, coinType, currentBalance - amount);
         }
+        return false;
     }
 
     /**
@@ -157,19 +156,19 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      * @param receiverUuid The UUID of the player receiving the coins.
      * @param coinType     The column name.
      * @param amount       The amount to transfer.
+     * @return true if transfer succeeded, false if sender has insufficient funds.
      */
     @Override
-    public void sendCoin(String senderUuid, String receiverUuid, String coinType, int amount) {
+    public boolean sendCoin(String senderUuid, String receiverUuid, String coinType, int amount) {
         int senderBalance = getCoin(senderUuid, coinType);
         if (senderBalance >= amount) {
-            minusCoin(senderUuid, coinType, amount);
-            addCoin(receiverUuid, coinType, amount);
-        } else {
-            Player sender = Bukkit.getPlayer(UUID.fromString(senderUuid));
-            if (sender != null) {
-                sender.sendMessage(Component.text("Transfer failed: Not enough " + coinType + "!", NamedTextColor.RED));
+            // Note: In a production environment, use SQL Transactions (commit/rollback) here.
+            boolean removed = setCoin(senderUuid, coinType, senderBalance - amount);
+            if (removed) {
+                return addCoin(receiverUuid, coinType, amount);
             }
         }
+        return false;
     }
 
     /**

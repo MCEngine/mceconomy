@@ -19,24 +19,28 @@ public interface IMCEconomyDB {
      * @param playerUuid The UUID of the player.
      * @param coinType The column name.
      * @param amount The new balance.
+     * @return true if the update was successful, false otherwise.
      */
-    void setCoin(String playerUuid, String coinType, int amount);
+    boolean setCoin(String playerUuid, String coinType, int amount);
 
     /**
      * Increases a player's balance.
      * @param playerUuid The UUID of the player.
      * @param coinType The column name.
      * @param amount The amount to add.
+     * @return true if the addition was successful, false otherwise.
      */
-    void addCoin(String playerUuid, String coinType, int amount);
+    boolean addCoin(String playerUuid, String coinType, int amount);
 
     /**
-     * Decreases a player's balance.
+     * Decreases a player's balance. 
+     * Implementations should check for sufficient funds.
      * @param playerUuid The UUID of the player.
      * @param coinType The column name.
      * @param amount The amount to subtract.
+     * @return true if the subtraction was successful, false if insufficient funds or error.
      */
-    void minusCoin(String playerUuid, String coinType, int amount);
+    boolean minusCoin(String playerUuid, String coinType, int amount);
 
     /**
      * Transfers coins from one player to another.
@@ -44,14 +48,16 @@ public interface IMCEconomyDB {
      * @param receiverUuid The UUID of the receiver.
      * @param coinType The column name.
      * @param amount The amount to transfer.
+     * @return true if the transfer was completed successfully, false otherwise.
      */
-    void sendCoin(String senderUuid, String receiverUuid, String coinType, int amount);
+    boolean sendCoin(String senderUuid, String receiverUuid, String coinType, int amount);
 
     /**
-     * Checks if a player exists in the database; if not, creates a record with default values (1).
+     * Checks if a player exists in the database; if not, creates a record with default values.
      * @param playerUuid The UUID of the player.
+     * @return true if the player exists or was successfully created, false if a database error occurred.
      */
-    void ensurePlayerExist(String playerUuid);
+    boolean ensurePlayerExist(String playerUuid);
 
     /**
      * Closes the database connection safely.

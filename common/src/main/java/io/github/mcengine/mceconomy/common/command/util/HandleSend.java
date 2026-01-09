@@ -62,28 +62,32 @@ public class HandleSend implements IEconomyCommandHandle {
             return;
         }
 
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
-            
-            if (!target.hasPlayedBefore() && !target.isOnline()) {
-                player.sendMessage(Component.text()
-                    .append(Component.text("Player ", NamedTextColor.RED))
-                    .append(Component.text(targetName, NamedTextColor.WHITE))
-                    .append(Component.text(" not found.", NamedTextColor.RED))
-                    .build());
-                return;
-            }
-
-            provider.sendCoin(player.getUniqueId().toString(), target.getUniqueId().toString(), coinType, amount);
-            
+        OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+        
+        // Validation check before attempting DB transaction
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
             player.sendMessage(Component.text()
-                .append(Component.text("Sent ", NamedTextColor.GREEN))
-                .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
-                .append(Component.text(" to ", NamedTextColor.GREEN))
+                .append(Component.text("Player ", NamedTextColor.RED))
                 .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text(".", NamedTextColor.GREEN))
+                .append(Component.text(" not found.", NamedTextColor.RED))
                 .build());
-        });
+            return;
+        }
+
+        provider.sendCoin(player.getUniqueId().toString(), target.getUniqueId().toString(), coinType, amount)
+            .thenAccept(success -> {
+                if (success) {
+                    player.sendMessage(Component.text()
+                        .append(Component.text("Sent ", NamedTextColor.GREEN))
+                        .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
+                        .append(Component.text(" to ", NamedTextColor.GREEN))
+                        .append(Component.text(targetName, NamedTextColor.WHITE))
+                        .append(Component.text(".", NamedTextColor.GREEN))
+                        .build());
+                } else {
+                    player.sendMessage(Component.text("Transfer failed: Insufficient funds.", NamedTextColor.RED));
+                }
+            });
     }
 
     /**
