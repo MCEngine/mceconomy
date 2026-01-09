@@ -5,7 +5,9 @@ import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import io.github.mcengine.mceconomy.common.command.util.*;
 import io.github.mcengine.mceconomy.common.listener.MCEconomyListenerManager;
 import io.github.mcengine.mceconomy.common.listener.util.HandleEnsurePlayerExist;
+import io.github.mcengine.mceconomy.common.tabcompleter.MCEconomyTabCompleter;
 import org.bukkit.Bukkit;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -52,7 +54,11 @@ public class MCEconomy extends JavaPlugin {
 
         // 4. Setup Commands and Listeners
         registerSubcommands();
-        getCommand("economy").setExecutor(commandManager);
+        PluginCommand economyCommand = getCommand("economy");
+        if (economyCommand != null) {
+            economyCommand.setExecutor(commandManager);
+            economyCommand.setTabCompleter(new MCEconomyTabCompleter(commandManager));
+        }
         registerListeners();
 
         getLogger().info("MCEconomy Engine has been enabled!");
