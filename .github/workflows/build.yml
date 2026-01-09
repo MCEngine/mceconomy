@@ -9,45 +9,40 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    
-    # --- FIX START ---
-    # Tell all 'run' steps to start inside the 'mceconomy' folder
-    defaults:
-      run:
-        working-directory: ./mceconomy
-    # --- FIX END ---
 
     steps:
       # 1. Check out the code
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 2. Set up Java 21
+      # 2. DEBUG: List all files to find gradlew
+      - name: List files recursively
+        run: ls -R
+
+      # 3. Set up Java 21
       - name: Set up JDK 21
         uses: actions/setup-java@v4
         with:
           java-version: '21'
           distribution: 'temurin'
 
-      # 3. Grant execute permission
-      # Now this looks in ./mceconomy/gradlew automatically
+      # 4. Grant execute permission (Try root first)
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
-      # 4. Build with Gradle
+      # 5. Build with Gradle
       - name: Build with Gradle
         run: ./gradlew clean build shadowJar
         env:
           BUILD_NUMBER: ${{ github.run_number }}
 
-      # 5. Save the JARs
-      # We also need to update the path to include 'mceconomy/'
+      # 6. Save the JARs
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
           name: MCEngine-Build-${{ github.run_number }}
           path: |
-            mceconomy/*/build/libs/*-all.jar
-            mceconomy/*/build/libs/*.jar
-            !mceconomy/*/build/libs/*-plain.jar
+            */build/libs/*-all.jar
+            */build/libs/*.jar
+            !*/build/libs/*-plain.jar
           retention-days: 1
