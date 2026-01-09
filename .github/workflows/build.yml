@@ -27,9 +27,11 @@ jobs:
         run: chmod +x gradlew
 
       # 4. Build with Gradle
-      # We pass the build number as a Project Property (-P)
+      # We map GitHub's run number to the 'BUILD_NUMBER' environment variable
       - name: Build with Gradle
-        run: ./gradlew clean build shadowJar -PbuildNumber=${{ github.run_number }}
+        run: ./gradlew clean build shadowJar
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
 
       # 5. Save the JARs
       - name: Upload Build Artifacts

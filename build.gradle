@@ -32,39 +32,43 @@ subprojects {
     // --- DYNAMIC VERSIONING LOGIC ---
     def propName = "mceconomy-${project.name}"
     
-    // 1. Detect if we have a Build Number (passed via -PbuildNumber)
-    boolean isDevBuild = project.hasProperty("buildNumber")
+    // 1. Detect if we have a Build Number (passed via ENV variable)
+    String buildNum = System.getenv("BUILD_NUMBER")
+    boolean isDevBuild = (buildNum != null)
     
     if (project.hasProperty("${propName}.version")) {
         def baseVersion = project.property("${propName}.version")
         def defaultClassifier = project.property("${propName}.classifier")
 
         if (isDevBuild) {
-            // CI Build: Use version like "1.0.0-dev.6"
-            version = "${baseVersion}-dev.${project.property('buildNumber')}"
+            // CI Build: "1.0.0-dev.9"
+            version = "${baseVersion}-dev.${buildNum}"
         } else {
-            // Local Build: Use version like "1.0.0-SNAPSHOT"
+            // Local Build: "1.0.0-SNAPSHOT"
             version = "${baseVersion}-${defaultClassifier}"
         }
     }
+    // --------------------------------
 
     // --- SHADOW JAR CONFIGURATION ---
     tasks.named('shadowJar') {
+        // 1. Set the Name (e.g., "MCEconomy")
         if (project.hasProperty("${propName}.name")) {
             archiveBaseName = project.property("${propName}.name")
         }
         
+        // 2. Set the Version (e.g., "1.0.0-dev.9")
         archiveVersion = project.version 
 
-        // 2. LOGIC FIX: Only add the classifier (SNAPSHOT) if it is NOT a dev build.
-        // If we are on CI, we want "MCEconomy-1.0.0-dev.6.jar", not "...-dev.6-SNAPSHOT.jar"
+        // 3. Clear the Classifier for Dev Builds
+        // Result: "MCEconomy-1.0.0-dev.9.jar" (Clean!)
         if (!isDevBuild && project.hasProperty("${propName}.classifier")) {
             archiveClassifier = project.property("${propName}.classifier")
         } else {
-            // Clear classifier for dev builds to keep the name clean
-            archiveClassifier = ''
+            archiveClassifier = '' 
         }
     }
+    // --------------------------------
 
     java {
         toolchain { languageVersion = JavaLanguageVersion.of(21) }
