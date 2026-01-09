@@ -35,7 +35,7 @@ publishing {
 
             pom {
                 name = project.property('mceconomy-engine.name')
-                description = 'The primary PaperMC engine implementation for MCEconomy.'
+                description = project.property('mceconomy-engine-artifact.description')
                 url = gitUrl
 
                 developers {
@@ -74,7 +74,7 @@ processResources {
     def props = [
         'engine_name'       : project.property('mceconomy-engine.name'),
         'project_group'     : project.group,
-        'engine_description': 'The primary PaperMC engine implementation for MCEconomy.',
+        'engine_description': project.property('mceconomy-engine-artifact.description'),
         'engine_version'    : project.version,
         'engine_website'    : project.property('mceconomy-engine-artifact.url')
     ]

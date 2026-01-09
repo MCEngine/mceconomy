@@ -34,7 +34,7 @@ publishing {
 
             pom {
                 name = project.property('mceconomy-common.name')
-                description = 'Shared logic and internal utilities for MCEconomy.'
+                project.property('mceconomy-common-artifact.description')
                 url = gitUrl
 
                 developers {

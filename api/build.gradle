@@ -33,7 +33,7 @@ publishing {
 
             pom {
                 name = project.property('mceconomy-api.name')
-                description = 'Public interfaces for the MCEconomy.'
+                description = project.property('mceconomy-api-artifact.description')
                 url = gitUrl
 
                 developers {
