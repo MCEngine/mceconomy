@@ -3,13 +3,11 @@
 build/
 /bin/
 bin/
-gradle/
 !gradle/wrapper/gradle-wrapper.jar
 
 # --- [ Java / IDEs ] ---
 *.class
 *.log
-*.jar
 *.war
 *.zip
 .project
