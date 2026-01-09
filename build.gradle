@@ -31,34 +31,40 @@ subprojects {
 
     // --- DYNAMIC VERSIONING LOGIC ---
     def propName = "mceconomy-${project.name}"
-
+    
+    // 1. Detect if we have a Build Number (passed via -PbuildNumber)
+    boolean isDevBuild = project.hasProperty("buildNumber")
+    
     if (project.hasProperty("${propName}.version")) {
         def baseVersion = project.property("${propName}.version")
         def defaultClassifier = project.property("${propName}.classifier")
-        
-        if (System.getenv("BUILD_NUMBER") != null) {
-            version = "${baseVersion}-dev.${System.getenv("BUILD_NUMBER")}"
+
+        if (isDevBuild) {
+            // CI Build: Use version like "1.0.0-dev.6"
+            version = "${baseVersion}-dev.${project.property('buildNumber')}"
         } else {
+            // Local Build: Use version like "1.0.0-SNAPSHOT"
             version = "${baseVersion}-${defaultClassifier}"
         }
     }
-    // --------------------------------
 
     // --- SHADOW JAR CONFIGURATION ---
     tasks.named('shadowJar') {
-        // Automatically finds 'mceconomy-common.name', 'mceconomy-engine.name', etc.
         if (project.hasProperty("${propName}.name")) {
             archiveBaseName = project.property("${propName}.name")
         }
         
-        // Uses the version we calculated above
         archiveVersion = project.version 
 
-        if (project.hasProperty("${propName}.classifier")) {
+        // 2. LOGIC FIX: Only add the classifier (SNAPSHOT) if it is NOT a dev build.
+        // If we are on CI, we want "MCEconomy-1.0.0-dev.6.jar", not "...-dev.6-SNAPSHOT.jar"
+        if (!isDevBuild && project.hasProperty("${propName}.classifier")) {
             archiveClassifier = project.property("${propName}.classifier")
+        } else {
+            // Clear classifier for dev builds to keep the name clean
+            archiveClassifier = ''
         }
     }
-    // --------------------------------
 
     java {
         toolchain { languageVersion = JavaLanguageVersion.of(21) }
@@ -68,21 +74,14 @@ subprojects {
         options.encoding = 'UTF-8'
     }
 
-    // 2. DISABLE STANDARD JAR FOR SUBPROJECTS
     tasks.named('jar') {
         enabled = false
     }
 
-    // 3. FORCE BUILD TO USE SHADOWJAR & FIX DEPENDENCIES
     plugins.withId('com.gradleup.shadow') {
-        
-        // Make 'build' create the ShadowJar
         tasks.named('assemble') {
             dependsOn('shadowJar')
         }
-
-        // --- THE CRITICAL FIX ---
-        // Tells Gradle: "When other projects need me, give them the ShadowJar"
         configurations {
             apiElements {
                 outgoing.artifacts.clear()
