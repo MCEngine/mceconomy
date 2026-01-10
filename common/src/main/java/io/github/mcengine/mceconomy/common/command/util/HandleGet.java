@@ -12,11 +12,7 @@ import org.bukkit.plugin.Plugin;
  * Command handler for retrieving a player's balance.
  */
 public class HandleGet implements IEconomyCommandHandle {
-    /**
-     * The plugin instance for scheduling tasks.
-     */
-    private final Plugin plugin;
-    
+
     /**
      * The economy provider for data operations.
      */
@@ -28,7 +24,6 @@ public class HandleGet implements IEconomyCommandHandle {
      * @param provider The economy provider.
      */
     public HandleGet(Plugin plugin, MCEconomyProvider provider) {
-        this.plugin = plugin;
         this.provider = provider;
     }
 
