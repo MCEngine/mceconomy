@@ -35,27 +35,31 @@ public class MCEconomyProvider {
         }
     }
 
-    // --- GETTERS (Synchronous) ---
-    // Note: Getters remain sync because they return a value. 
-    // Always call these from an async task in your own code to avoid lag.
+    // --- GETTERS (Asynchronous with Future) ---
 
     /**
-     * Gets the balance of the default 'coin' type.
+     * Gets the balance of the default 'coin' type asynchronously.
      * @param playerUuid The UUID of the player.
-     * @return Current balance.
+     * @return A Future that completes with the current balance.
      */
-    public int getCoin(String playerUuid) {
-        return db.getCoin(playerUuid, DEFAULT_COIN);
+    public CompletableFuture<Integer> getCoin(String playerUuid) {
+        return CompletableFuture.supplyAsync(
+            () -> db.getCoin(playerUuid, DEFAULT_COIN),
+            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
+        );
     }
 
     /**
-     * Gets the balance for a specific coin type.
+     * Gets the balance for a specific coin type asynchronously.
      * @param playerUuid The UUID of the player.
      * @param coinType The type (coin, copper, silver, gold).
-     * @return Current balance.
+     * @return A Future that completes with the current balance.
      */
-    public int getCoin(String playerUuid, String coinType) {
-        return db.getCoin(playerUuid, coinType);
+    public CompletableFuture<Integer> getCoin(String playerUuid, String coinType) {
+        return CompletableFuture.supplyAsync(
+            () -> db.getCoin(playerUuid, coinType),
+            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
+        );
     }
 
     // --- SETTERS (Asynchronous with Future) ---

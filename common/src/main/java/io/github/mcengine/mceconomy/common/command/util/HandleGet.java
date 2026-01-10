@@ -4,7 +4,6 @@ import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import org.bukkit.Bukkit;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -52,10 +51,8 @@ public class HandleGet implements IEconomyCommandHandle {
         Player player = (Player) sender;
         String coinType = args[0].toLowerCase();
 
-        // Note: getCoin is synchronous in the Provider but hits the database.
-        // We run it async to prevent main thread lag.
-        Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
-            int balance = provider.getCoin(player.getUniqueId().toString(), coinType);
+        // The provider now handles the async task. We just handle the result.
+        provider.getCoin(player.getUniqueId().toString(), coinType).thenAccept(balance -> {
             player.sendMessage(Component.text()
                 .append(Component.text("Your " + coinType + " balance: ", NamedTextColor.GREEN))
                 .append(Component.text(balance, NamedTextColor.WHITE))
