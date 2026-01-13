@@ -5,6 +5,8 @@ import io.github.mcengine.mceconomy.common.MCEconomyProvider;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
@@ -35,24 +37,62 @@ public class HandleGet implements IEconomyCommandHandle {
      */
     @Override
     public void invoke(CommandSender sender, String[] args) {
-        if (!(sender instanceof Player)) {
-            MCEconomyCommandManager.send(sender, Component.text("Only players can check their balance.", NamedTextColor.RED));
-            return;
-        }
+        // Minimum requirement: <coin type>
         if (args.length < 1) {
-            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy get <coin type>", NamedTextColor.RED));
+            if (sender.hasPermission("mceconomy.get.other")) {
+                MCEconomyCommandManager.send(sender, Component.text("Usage: /economy get <coin type> [player]", NamedTextColor.RED));
+            } else {
+                MCEconomyCommandManager.send(sender, Component.text("Usage: /economy get <coin type>", NamedTextColor.RED));
+            }
             return;
         }
 
-        Player player = (Player) sender;
         String coinType = args[0].toLowerCase();
+        OfflinePlayer target;
 
-        // The provider now handles the async task. We just handle the result.
-        provider.getCoin(player.getUniqueId().toString(), coinType).thenAccept(balance -> {
-            MCEconomyCommandManager.send(player, Component.text()
-                .append(Component.text("Your " + coinType + " balance: ", NamedTextColor.GREEN))
-                .append(Component.text(balance, NamedTextColor.WHITE))
+        // Case 1: Checking own balance
+        if (args.length == 1) {
+            if (!(sender instanceof Player)) {
+                MCEconomyCommandManager.send(sender, Component.text("Console must specify a player: /economy get <coin type> <player>", NamedTextColor.RED));
+                return;
+            }
+            target = (Player) sender;
+        } 
+        // Case 2: Checking another player's balance (OP/Admin)
+        else {
+            if (!sender.hasPermission("mceconomy.get.other")) {
+                MCEconomyCommandManager.send(sender, Component.text("No permission to check other players' balances.", NamedTextColor.RED));
+                return;
+            }
+            target = Bukkit.getOfflinePlayer(args[1]);
+        }
+        
+        // Validation check
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
+             MCEconomyCommandManager.send(sender, Component.text()
+                .append(Component.text("Player ", NamedTextColor.RED))
+                .append(Component.text(target.getName() != null ? target.getName() : args[1], NamedTextColor.WHITE))
+                .append(Component.text(" not found.", NamedTextColor.RED))
                 .build());
+            return;
+        }
+
+        // Capture name for lambda (OfflinePlayer#getName() can be null, handle gracefully)
+        String targetName = target.getName() != null ? target.getName() : "Unknown";
+
+        provider.getCoin(target.getUniqueId().toString(), coinType).thenAccept(balance -> {
+            // Message variation depending on if checking self or other
+            if (sender instanceof Player && ((Player) sender).getUniqueId().equals(target.getUniqueId())) {
+                MCEconomyCommandManager.send(sender, Component.text()
+                    .append(Component.text("Your " + coinType + " balance: ", NamedTextColor.GREEN))
+                    .append(Component.text(balance, NamedTextColor.WHITE))
+                    .build());
+            } else {
+                MCEconomyCommandManager.send(sender, Component.text()
+                    .append(Component.text(targetName + "'s " + coinType + " balance: ", NamedTextColor.GREEN))
+                    .append(Component.text(balance, NamedTextColor.WHITE))
+                    .build());
+            }
         });
     }
 
@@ -65,7 +105,7 @@ public class HandleGet implements IEconomyCommandHandle {
     }
 
     /**
-     * @return null as this command is available to all players by default.
+     * @return null as this command is available to all players by default (for self).
      */
     @Override
     public String getPermission() {
