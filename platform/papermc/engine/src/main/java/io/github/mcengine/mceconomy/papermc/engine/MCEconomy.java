@@ -23,7 +23,7 @@ import java.util.concurrent.Executor;
 public class MCEconomy extends JavaPlugin {
 
     /**
-     * The provider handling database operations and coin logic.
+     * The provider handling database operations, coin logic, and managers.
      */
     private MCEconomyProvider provider;
 
@@ -47,19 +47,20 @@ public class MCEconomy extends JavaPlugin {
         saveDefaultConfig();
 
         // 2. Initialize Core Components
-        // Initialize Database Implementation based on config
         IMCEconomyDB db = setupDatabase();
-        
-        // Initialize Platform-Specific Executor
-        // This logic works for Spigot, Paper, and Folia
         Executor asyncExecutor = setupExecutor();
 
-        this.provider = new MCEconomyProvider(db, asyncExecutor);
+        // Managers must be initialized before the provider now
         this.commandManager = new MCEconomyCommandManager();
         this.listenerManager = new MCEconomyListenerManager(this);
 
+        // Inject everything into the Provider
+        this.provider = new MCEconomyProvider(db, asyncExecutor, commandManager, listenerManager);
+
         // 3. Register Managers as Bukkit Services
         Bukkit.getServicesManager().register(MCEconomyProvider.class, provider, this, ServicePriority.Normal);
+        // We can still register these separately if other plugins look for them directly, 
+        // or rely solely on MCEconomyProvider. For safety, we keep them registered.
         Bukkit.getServicesManager().register(MCEconomyCommandManager.class, commandManager, this, ServicePriority.Normal);
         Bukkit.getServicesManager().register(MCEconomyListenerManager.class, listenerManager, this, ServicePriority.Normal);
 
@@ -138,21 +139,5 @@ public class MCEconomy extends JavaPlugin {
      */
     public MCEconomyProvider getProvider() {
         return this.provider;
-    }
-
-    /**
-     * Gets the command manager for subcommands.
-     * @return The MCEconomyCommandManager instance.
-     */
-    public MCEconomyCommandManager getCommandManager() {
-        return this.commandManager;
-    }
-
-    /**
-     * Gets the listener manager for internal events.
-     * @return The MCEconomyListenerManager instance.
-     */
-    public MCEconomyListenerManager getListenerManager() {
-        return this.listenerManager;
     }
 }
