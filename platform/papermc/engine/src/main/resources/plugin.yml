@@ -1,5 +1,5 @@
 name: ${engine_name}
-main: ${project_group}.mceconomy.engine.papermc.MCEconomy
+main: ${project_group}.mceconomy.papermc.engine.MCEconomy
 description: ${engine_description}
 version: ${engine_version}
 website: ${engine_website}
