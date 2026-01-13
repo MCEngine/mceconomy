@@ -1,3 +1,13 @@
 rootProject.name = "mceconomy"
 
-include 'api', 'common', 'engine'
+// Standard modules
+include 'api', 'common'
+
+// Define the platforms you want to support
+def platforms = ['papermc']
+
+// Function-like loop to register platform engine modules
+platforms.each { platform ->
+    String projectPath = ":platform:${platform}:engine"
+    include projectPath
+}
