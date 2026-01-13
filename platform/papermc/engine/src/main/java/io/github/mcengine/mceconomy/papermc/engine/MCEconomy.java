@@ -1,4 +1,4 @@
-package io.github.mcengine.mceconomy.engine;
+package io.github.mcengine.mceconomy.papermc.engine;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
