@@ -39,7 +39,7 @@ jobs:
         with:
           name: MCEngine-Build-${{ github.run_number }}
           path: |
-            */build/libs/*-all.jar
-            */build/libs/*.jar
-            !*/build/libs/*-plain.jar
+            **/build/libs/*-all.jar
+            **/build/libs/*.jar
+            !**/build/libs/*-plain.jar
           retention-days: 1

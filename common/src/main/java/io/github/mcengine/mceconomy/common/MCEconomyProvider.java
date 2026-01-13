@@ -1,206 +1,251 @@
 package io.github.mcengine.mceconomy.common;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
-import io.github.mcengine.mceconomy.common.database.mysql.MCEconomyMySQL;
-import io.github.mcengine.mceconomy.common.database.sqlite.MCEconomySQLite;
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.Plugin;
+import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
+import io.github.mcengine.mceconomy.common.listener.MCEconomyListenerManager;
+
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.function.Supplier;
 
 /**
  * High-level provider that acts as a wrapper for the underlying database.
- * Methods that modify data are executed asynchronously and return Futures to track success.
+ * <p>
+ * This class is platform-agnostic. It does not depend on Bukkit/Spigot directly,
+ * instead using an injected {@link Executor} to handle asynchronous operations
+ * in a way compatible with Spigot, Paper, and Folia.
+ * </p>
  */
 public class MCEconomyProvider {
+
+    /**
+     * The singleton instance of the provider.
+     */
+    private static MCEconomyProvider instance;
+
+    /**
+     * The underlying database implementation (e.g., MySQL or SQLite).
+     */
     private final IMCEconomyDB db;
-    private final Plugin plugin;
+
+    /**
+     * The platform-specific executor used to run database tasks off the main thread.
+     */
+    private final Executor asyncExecutor;
+
+    /**
+     * The manager handling subcommand registration and execution.
+     */
+    private final MCEconomyCommandManager commandManager;
+
+    /**
+     * The manager handling event listener registration.
+     */
+    private final MCEconomyListenerManager listenerManager;
+
+    /**
+     * The default currency identifier used when no specific coin type is provided.
+     */
     private static final String DEFAULT_COIN = "coin";
 
     /**
-     * Initializes the provider based on the config.yml settings.
-     * @param plugin The Spigot Plugin instance.
+     * Initializes the provider with a database implementation and an async executor.
+     * Sets the static singleton instance upon creation.
+     *
+     * @param db              The database logic implementation.
+     * @param asyncExecutor   The executor (e.g., Bukkit scheduler or Folia async scheduler).
+     * @param commandManager  The command manager instance.
+     * @param listenerManager The listener manager instance.
      */
-    public MCEconomyProvider(Plugin plugin) {
-        this.plugin = plugin;
-        String dbType = plugin.getConfig().getString("db.type", "sqlite").toLowerCase();
-        
-        switch (dbType) {
-            case "mysql":
-                this.db = new MCEconomyMySQL(plugin);
-                break;
-            case "sqlite":
-            default:
-                this.db = new MCEconomySQLite(plugin);
-                break;
-        }
+    public MCEconomyProvider(IMCEconomyDB db, Executor asyncExecutor, MCEconomyCommandManager commandManager, MCEconomyListenerManager listenerManager) {
+        this.db = db;
+        this.asyncExecutor = asyncExecutor;
+        this.commandManager = commandManager;
+        this.listenerManager = listenerManager;
+        instance = this; // Set the singleton instance
     }
 
-    // --- GETTERS (Asynchronous with Future) ---
+    /**
+     * Gets the active singleton instance of the MCEconomyProvider.
+     * Use this method to access the API without depending on the Engine class.
+     *
+     * @return The active MCEconomyProvider instance, or null if not initialized.
+     */
+    public static MCEconomyProvider getInstance() {
+        return instance;
+    }
+
+    /**
+     * Internal helper to wrap blocking database calls into a CompletableFuture.
+     *
+     * @param <T>      The return type.
+     * @param supplier The database operation logic.
+     * @return A CompletableFuture tracking the asynchronous task.
+     */
+    private <T> CompletableFuture<T> runAsync(Supplier<T> supplier) {
+        return CompletableFuture.supplyAsync(supplier, asyncExecutor);
+    }
+
+    /**
+     * Gets the command manager for subcommands.
+     * @return The MCEconomyCommandManager instance.
+     */
+    public MCEconomyCommandManager getCommandManager() {
+        return this.commandManager;
+    }
+
+    /**
+     * Gets the listener manager for internal events.
+     * @return The MCEconomyListenerManager instance.
+     */
+    public MCEconomyListenerManager getListenerManager() {
+        return this.listenerManager;
+    }
+
+    // --- GETTERS ---
 
     /**
      * Gets the balance of the default 'coin' type asynchronously.
+     *
      * @param playerUuid The UUID of the player.
      * @return A Future that completes with the current balance.
      */
     public CompletableFuture<Integer> getCoin(String playerUuid) {
-        return CompletableFuture.supplyAsync(
-            () -> db.getCoin(playerUuid, DEFAULT_COIN),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return getCoin(playerUuid, DEFAULT_COIN);
     }
 
     /**
      * Gets the balance for a specific coin type asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @param coinType The type (coin, copper, silver, gold).
+     * @param coinType   The type of currency (e.g., "gold", "silver").
      * @return A Future that completes with the current balance.
      */
     public CompletableFuture<Integer> getCoin(String playerUuid, String coinType) {
-        return CompletableFuture.supplyAsync(
-            () -> db.getCoin(playerUuid, coinType),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return runAsync(() -> db.getCoin(playerUuid, coinType));
     }
 
-    // --- SETTERS (Asynchronous with Future) ---
+    // --- SETTERS ---
 
     /**
      * Sets the balance of the default 'coin' type asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @param amount The new amount.
+     * @param amount     The new amount to set.
      * @return A Future that completes with true if successful.
      */
     public CompletableFuture<Boolean> setCoin(String playerUuid, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.setCoin(playerUuid, DEFAULT_COIN, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return setCoin(playerUuid, DEFAULT_COIN, amount);
     }
 
     /**
      * Sets the balance for a specific coin type asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @param coinType The type.
-     * @param amount The new amount.
+     * @param coinType   The type of currency.
+     * @param amount     The new amount to set.
      * @return A Future that completes with true if successful.
      */
     public CompletableFuture<Boolean> setCoin(String playerUuid, String coinType, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.setCoin(playerUuid, coinType, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return runAsync(() -> db.setCoin(playerUuid, coinType, amount));
     }
 
-    // --- ADD (Asynchronous with Future) ---
+    // --- ADD ---
 
     /**
      * Adds an amount to the default 'coin' balance asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @param amount Amount to add.
+     * @param amount     Amount to add.
      * @return A Future that completes with true if successful.
      */
     public CompletableFuture<Boolean> addCoin(String playerUuid, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.addCoin(playerUuid, DEFAULT_COIN, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return addCoin(playerUuid, DEFAULT_COIN, amount);
     }
 
     /**
-     * Adds an amount to a specific coin type asynchronously.
+     * Adds an amount to a specific coin type balance asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @param coinType The type.
-     * @param amount Amount to add.
+     * @param coinType   The type of currency.
+     * @param amount     Amount to add.
      * @return A Future that completes with true if successful.
      */
     public CompletableFuture<Boolean> addCoin(String playerUuid, String coinType, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.addCoin(playerUuid, coinType, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return runAsync(() -> db.addCoin(playerUuid, coinType, amount));
     }
 
-    // --- MINUS (Asynchronous with Future) ---
+    // --- MINUS ---
 
     /**
      * Subtracts an amount from the default 'coin' balance asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @param amount Amount to subtract.
-     * @return A Future that completes with true if transaction succeeded, false if insufficient funds.
+     * @param amount     Amount to subtract.
+     * @return A Future that completes with true if successful, false if insufficient funds.
      */
     public CompletableFuture<Boolean> minusCoin(String playerUuid, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.minusCoin(playerUuid, DEFAULT_COIN, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return minusCoin(playerUuid, DEFAULT_COIN, amount);
     }
 
     /**
-     * Subtracts an amount from a specific coin type asynchronously.
+     * Subtracts an amount from a specific coin type balance asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @param coinType The type.
-     * @param amount Amount to subtract.
-     * @return A Future that completes with true if transaction succeeded, false if insufficient funds.
+     * @param coinType   The type of currency.
+     * @param amount     Amount to subtract.
+     * @return A Future that completes with true if successful, false if insufficient funds.
      */
     public CompletableFuture<Boolean> minusCoin(String playerUuid, String coinType, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.minusCoin(playerUuid, coinType, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return runAsync(() -> db.minusCoin(playerUuid, coinType, amount));
     }
 
-    // --- SEND (Asynchronous with Future) ---
+    // --- SEND ---
 
     /**
      * Sends default 'coin' currency from one player to another asynchronously.
-     * @param senderUuid Sender player UUID.
+     *
+     * @param senderUuid   Sender player UUID.
      * @param receiverUuid Receiver player UUID.
-     * @param amount Amount to transfer.
-     * @return A Future that completes with true if successful, false if sender has insufficient funds.
+     * @param amount       Amount to transfer.
+     * @return A Future that completes with true if successful.
      */
     public CompletableFuture<Boolean> sendCoin(String senderUuid, String receiverUuid, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.sendCoin(senderUuid, receiverUuid, DEFAULT_COIN, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return sendCoin(senderUuid, receiverUuid, DEFAULT_COIN, amount);
     }
 
     /**
      * Sends a specific coin type from one player to another asynchronously.
-     * @param senderUuid Sender player UUID.
+     *
+     * @param senderUuid   Sender player UUID.
      * @param receiverUuid Receiver player UUID.
-     * @param coinType The type.
-     * @param amount Amount to transfer.
+     * @param coinType     The type of currency.
+     * @param amount       Amount to transfer.
      * @return A Future that completes with true if successful, false if sender has insufficient funds.
      */
     public CompletableFuture<Boolean> sendCoin(String senderUuid, String receiverUuid, String coinType, int amount) {
-        return CompletableFuture.supplyAsync(
-            () -> db.sendCoin(senderUuid, receiverUuid, coinType, amount),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return runAsync(() -> db.sendCoin(senderUuid, receiverUuid, coinType, amount));
     }
 
     // --- UTILITY ---
 
     /**
      * Ensures the player has an entry in the database asynchronously.
+     *
      * @param playerUuid The UUID of the player.
-     * @return A Future that completes with true if successful.
+     * @return A Future that completes with true if the player exists or was successfully created.
      */
     public CompletableFuture<Boolean> ensurePlayerExist(String playerUuid) {
-        return CompletableFuture.supplyAsync(
-            () -> db.ensurePlayerExist(playerUuid),
-            task -> Bukkit.getScheduler().runTaskAsynchronously(plugin, task)
-        );
+        return runAsync(() -> db.ensurePlayerExist(playerUuid));
     }
 
     /**
-     * Properly shuts down the database connection.
-     * Should be called in the Plugin's onDisable().
+     * Properly shuts down the database connection and releases resources.
      */
     public void shutdown() {
         if (db != null) {
             db.close();
         }
+        instance = null; // Clear singleton
     }
 }

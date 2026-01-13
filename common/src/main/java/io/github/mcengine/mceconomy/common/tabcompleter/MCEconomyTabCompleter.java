@@ -74,8 +74,13 @@ public class MCEconomyTabCompleter implements TabCompleter {
 
             switch (subName) {
                 case "get":
-                    // /economy get <coin type>
+                    // /economy get <coin type> [player]
                     if (args.length == 2) return filter(coinTypes, args[1]);
+                    
+                    // Suggest player at arg 3 if they have permission to see others
+                    if (args.length == 3 && sender.hasPermission("mceconomy.get.other")) {
+                        return filter(Bukkit.getOnlinePlayers().stream().map(Player::getName).collect(Collectors.toList()), args[2]);
+                    }
                     break;
 
                 case "add":

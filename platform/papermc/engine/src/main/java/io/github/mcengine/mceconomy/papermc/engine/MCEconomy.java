@@ -1,8 +1,11 @@
-package io.github.mcengine.mceconomy.engine;
+package io.github.mcengine.mceconomy.papermc.engine;
 
+import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import io.github.mcengine.mceconomy.common.command.util.*;
+import io.github.mcengine.mceconomy.common.database.mysql.MCEconomyMySQL;
+import io.github.mcengine.mceconomy.common.database.sqlite.MCEconomySQLite;
 import io.github.mcengine.mceconomy.common.listener.MCEconomyListenerManager;
 import io.github.mcengine.mceconomy.common.listener.util.HandleEnsurePlayerExist;
 import io.github.mcengine.mceconomy.common.tabcompleter.MCEconomyTabCompleter;
@@ -11,6 +14,8 @@ import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.concurrent.Executor;
+
 /**
  * Main plugin class for MCEconomy.
  * Handles the lifecycle and registration of the economy system.
@@ -18,7 +23,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 public class MCEconomy extends JavaPlugin {
 
     /**
-     * The provider handling database operations and coin logic.
+     * The provider handling database operations, coin logic, and managers.
      */
     private MCEconomyProvider provider;
 
@@ -42,13 +47,20 @@ public class MCEconomy extends JavaPlugin {
         saveDefaultConfig();
 
         // 2. Initialize Core Components
-        this.provider = new MCEconomyProvider(this);
+        IMCEconomyDB db = setupDatabase();
+        Executor asyncExecutor = setupExecutor();
+
+        // Managers must be initialized before the provider now
         this.commandManager = new MCEconomyCommandManager();
         this.listenerManager = new MCEconomyListenerManager(this);
 
+        // Inject everything into the Provider
+        this.provider = new MCEconomyProvider(db, asyncExecutor, commandManager, listenerManager);
+
         // 3. Register Managers as Bukkit Services
-        // This allows Addons to find these instances and register their own logic
         Bukkit.getServicesManager().register(MCEconomyProvider.class, provider, this, ServicePriority.Normal);
+        // We can still register these separately if other plugins look for them directly, 
+        // or rely solely on MCEconomyProvider. For safety, we keep them registered.
         Bukkit.getServicesManager().register(MCEconomyCommandManager.class, commandManager, this, ServicePriority.Normal);
         Bukkit.getServicesManager().register(MCEconomyListenerManager.class, listenerManager, this, ServicePriority.Normal);
 
@@ -62,6 +74,31 @@ public class MCEconomy extends JavaPlugin {
         registerListeners();
 
         getLogger().info("MCEconomy Engine has been enabled!");
+    }
+
+    /**
+     * Helper to determine the correct database implementation.
+     */
+    private IMCEconomyDB setupDatabase() {
+        String dbType = getConfig().getString("db.type", "sqlite").toLowerCase();
+        if ("mysql".equals(dbType)) {
+            return new MCEconomyMySQL(this);
+        }
+        return new MCEconomySQLite(this);
+    }
+
+    /**
+     * Helper to determine the correct Executor for the platform.
+     */
+    private Executor setupExecutor() {
+        try {
+            // Check if Folia's AsyncScheduler is available (Folia/Paper 1.20+)
+            Class.forName("io.papermc.paper.threadedregions.scheduler.AsyncScheduler");
+            return task -> Bukkit.getAsyncScheduler().runNow(this, scheduledTask -> task.run());
+        } catch (ClassNotFoundException e) {
+            // Fallback to standard Bukkit Async Scheduler (Spigot/Legacy Paper)
+            return task -> Bukkit.getScheduler().runTaskAsynchronously(this, task);
+        }
     }
 
     /**
@@ -102,21 +139,5 @@ public class MCEconomy extends JavaPlugin {
      */
     public MCEconomyProvider getProvider() {
         return this.provider;
-    }
-
-    /**
-     * Gets the command manager for subcommands.
-     * @return The MCEconomyCommandManager instance.
-     */
-    public MCEconomyCommandManager getCommandManager() {
-        return this.commandManager;
-    }
-
-    /**
-     * Gets the listener manager for internal events.
-     * @return The MCEconomyListenerManager instance.
-     */
-    public MCEconomyListenerManager getListenerManager() {
-        return this.listenerManager;
     }
 }

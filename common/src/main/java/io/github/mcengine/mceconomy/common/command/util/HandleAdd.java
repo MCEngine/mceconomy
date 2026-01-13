@@ -2,6 +2,7 @@ package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
+import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -36,11 +37,11 @@ public class HandleAdd implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mceconomy.add.coin")) {
-            sender.sendMessage(Component.text("No permission.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("No permission.", NamedTextColor.RED));
             return;
         }
         if (args.length < 3) {
-            sender.sendMessage(Component.text("Usage: /economy add <player> <coin type> <amount>", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy add <player> <coin type> <amount>", NamedTextColor.RED));
             return;
         }
 
@@ -51,15 +52,25 @@ public class HandleAdd implements IEconomyCommandHandle {
         try { 
             amount = Integer.parseInt(args[2]); 
         } catch (NumberFormatException e) {
-            sender.sendMessage(Component.text("Amount must be a number.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Amount must be a number.", NamedTextColor.RED));
             return;
         }
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         
+        // Validation check before attempting DB transaction
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
+            MCEconomyCommandManager.send(sender, Component.text()
+                .append(Component.text("Player ", NamedTextColor.RED))
+                .append(Component.text(targetName, NamedTextColor.WHITE))
+                .append(Component.text(" not found.", NamedTextColor.RED))
+                .build());
+            return;
+        }
+
         provider.addCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
             if (success) {
-                sender.sendMessage(Component.text()
+                MCEconomyCommandManager.send(sender, Component.text()
                     .append(Component.text("Added ", NamedTextColor.GREEN))
                     .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
                     .append(Component.text(" to ", NamedTextColor.GREEN))
@@ -67,7 +78,7 @@ public class HandleAdd implements IEconomyCommandHandle {
                     .append(Component.text(".", NamedTextColor.GREEN))
                     .build());
             } else {
-                sender.sendMessage(Component.text("Failed to add coins. Check console for database errors.", NamedTextColor.RED));
+                MCEconomyCommandManager.send(sender, Component.text("Failed to add coins. Check console for database errors.", NamedTextColor.RED));
             }
         });
     }

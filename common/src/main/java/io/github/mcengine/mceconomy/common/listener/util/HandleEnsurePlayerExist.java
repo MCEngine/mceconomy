@@ -1,6 +1,7 @@
 package io.github.mcengine.mceconomy.common.listener.util;
 
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
+import org.bukkit.Bukkit;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
@@ -32,13 +33,13 @@ public class HandleEnsurePlayerExist implements Listener {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
         String uuid = event.getPlayer().getUniqueId().toString();
+        String playerName = event.getPlayer().getName();
         
         // ensurePlayerExist is asynchronous inside the MCEconomyProvider.
-        // We use thenAccept to log a warning if the database record could not be created.
         provider.ensurePlayerExist(uuid).thenAccept(success -> {
             if (!success) {
-                // You could log this to console or notify admins
-                System.err.println("[MCEconomy] Failed to ensure database record for: " + event.getPlayer().getName());
+                // Log warning using Bukkit logger instead of System.err
+                Bukkit.getLogger().warning("[MCEconomy] Failed to ensure database record for player: " + playerName);
             }
         });
     }

@@ -10,7 +10,11 @@ plugins {
 version = project.property('mceconomy-api.version')
 
 dependencies {
-    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+    // Compile against Spigot
+    compileOnly 'org.spigotmc:spigot-api:1.21.11-R0.1-SNAPSHOT'
+    
+    // API needs the core Adventure library for the 'Component' class in interfaces
+    api 'net.kyori:adventure-api:4.26.1'
 }
 
 // Define variables for cleaner URL construction

@@ -11,7 +11,12 @@ version = project.property('mceconomy-common.version')
 
 dependencies {
     api project(':api')
-    compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
+
+    // Compile against Spigot
+    compileOnly 'org.spigotmc:spigot-api:1.21.11-R0.1-SNAPSHOT'
+    
+    // Common needs this to convert Components to Strings for Spigot console/chat
+    implementation 'net.kyori:adventure-text-serializer-legacy:4.26.1'
 }
 
 // Define variables for cleaner URL construction
@@ -27,7 +32,7 @@ publishing {
 
             pom {
                 name = project.property('mceconomy-common.name')
-                project.property('mceconomy-common-artifact.description')
+                description = project.property('mceconomy-common-artifact.description')
                 url = gitUrl
 
                 developers {
