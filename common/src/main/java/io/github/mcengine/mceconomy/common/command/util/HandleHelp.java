@@ -36,7 +36,7 @@ public class HandleHelp implements IEconomyCommandHandle {
      */
     @Override
     public void invoke(CommandSender sender, String[] args) {
-        sender.sendMessage(Component.text("--- MCEconomy Help ---", NamedTextColor.GOLD, TextDecoration.BOLD));
+        MCEconomyCommandManager.send(sender, Component.text("--- MCEconomy Help ---", NamedTextColor.GOLD, TextDecoration.BOLD));
 
         for (Map.Entry<String, IEconomyCommandHandle> entry : manager.getSubcommands().entrySet()) {
             String name = entry.getKey();
@@ -47,7 +47,7 @@ public class HandleHelp implements IEconomyCommandHandle {
             if (handle.getPermission() == null || sender.hasPermission(handle.getPermission())) {
                 String fullCommand = "/economy " + name;
 
-                sender.sendMessage(Component.text()
+                MCEconomyCommandManager.send(sender, Component.text()
                     .append(Component.text(fullCommand + " ", NamedTextColor.YELLOW)
                         // Click to autofill the command in the chat bar
                         .clickEvent(ClickEvent.suggestCommand(fullCommand + " "))

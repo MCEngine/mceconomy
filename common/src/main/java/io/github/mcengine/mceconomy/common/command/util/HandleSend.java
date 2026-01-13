@@ -2,6 +2,7 @@ package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
+import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -37,11 +38,11 @@ public class HandleSend implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Only players can send coins.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Only players can send coins.", NamedTextColor.RED));
             return;
         }
         if (args.length < 3) {
-            sender.sendMessage(Component.text("Usage: /economy send <player> <coin type> <amount>", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy send <player> <coin type> <amount>", NamedTextColor.RED));
             return;
         }
 
@@ -53,7 +54,7 @@ public class HandleSend implements IEconomyCommandHandle {
         try { 
             amount = Integer.parseInt(args[2]); 
         } catch (NumberFormatException e) {
-            sender.sendMessage(Component.text("Amount must be a number.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Amount must be a number.", NamedTextColor.RED));
             return;
         }
 
@@ -61,7 +62,7 @@ public class HandleSend implements IEconomyCommandHandle {
         
         // Validation check before attempting DB transaction
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            player.sendMessage(Component.text()
+            MCEconomyCommandManager.send(player, Component.text()
                 .append(Component.text("Player ", NamedTextColor.RED))
                 .append(Component.text(targetName, NamedTextColor.WHITE))
                 .append(Component.text(" not found.", NamedTextColor.RED))
@@ -72,7 +73,7 @@ public class HandleSend implements IEconomyCommandHandle {
         provider.sendCoin(player.getUniqueId().toString(), target.getUniqueId().toString(), coinType, amount)
             .thenAccept(success -> {
                 if (success) {
-                    player.sendMessage(Component.text()
+                    MCEconomyCommandManager.send(player, Component.text()
                         .append(Component.text("Sent ", NamedTextColor.GREEN))
                         .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
                         .append(Component.text(" to ", NamedTextColor.GREEN))
@@ -80,7 +81,7 @@ public class HandleSend implements IEconomyCommandHandle {
                         .append(Component.text(".", NamedTextColor.GREEN))
                         .build());
                 } else {
-                    player.sendMessage(Component.text("Transfer failed: Insufficient funds.", NamedTextColor.RED));
+                    MCEconomyCommandManager.send(player, Component.text("Transfer failed: Insufficient funds.", NamedTextColor.RED));
                 }
             });
     }

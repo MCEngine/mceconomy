@@ -2,6 +2,7 @@ package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
+import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.command.CommandSender;
@@ -35,11 +36,11 @@ public class HandleGet implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            sender.sendMessage(Component.text("Only players can check their balance.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Only players can check their balance.", NamedTextColor.RED));
             return;
         }
         if (args.length < 1) {
-            sender.sendMessage(Component.text("Usage: /economy get <coin type>", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy get <coin type>", NamedTextColor.RED));
             return;
         }
 
@@ -48,7 +49,7 @@ public class HandleGet implements IEconomyCommandHandle {
 
         // The provider now handles the async task. We just handle the result.
         provider.getCoin(player.getUniqueId().toString(), coinType).thenAccept(balance -> {
-            player.sendMessage(Component.text()
+            MCEconomyCommandManager.send(player, Component.text()
                 .append(Component.text("Your " + coinType + " balance: ", NamedTextColor.GREEN))
                 .append(Component.text(balance, NamedTextColor.WHITE))
                 .build());

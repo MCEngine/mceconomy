@@ -2,6 +2,7 @@ package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
+import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
@@ -36,11 +37,11 @@ public class HandleMinus implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mceconomy.minus.coin")) {
-            sender.sendMessage(Component.text("No permission.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("No permission.", NamedTextColor.RED));
             return;
         }
         if (args.length < 3) {
-            sender.sendMessage(Component.text("Usage: /economy minus <player> <coin type> <amount>", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy minus <player> <coin type> <amount>", NamedTextColor.RED));
             return;
         }
 
@@ -51,7 +52,7 @@ public class HandleMinus implements IEconomyCommandHandle {
         try { 
             amount = Integer.parseInt(args[2]); 
         } catch (NumberFormatException e) {
-            sender.sendMessage(Component.text("Amount must be a number.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.text("Amount must be a number.", NamedTextColor.RED));
             return;
         }
 
@@ -59,7 +60,7 @@ public class HandleMinus implements IEconomyCommandHandle {
         
         provider.minusCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
             if (success) {
-                sender.sendMessage(Component.text()
+                MCEconomyCommandManager.send(sender, Component.text()
                     .append(Component.text("Removed ", NamedTextColor.GREEN))
                     .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
                     .append(Component.text(" from ", NamedTextColor.GREEN))
@@ -67,7 +68,7 @@ public class HandleMinus implements IEconomyCommandHandle {
                     .append(Component.text(".", NamedTextColor.GREEN))
                     .build());
             } else {
-                sender.sendMessage(Component.text()
+                MCEconomyCommandManager.send(sender, Component.text()
                     .append(Component.text("Operation failed. ", NamedTextColor.RED))
                     .append(Component.text(targetName, NamedTextColor.WHITE))
                     .append(Component.text(" has insufficient funds.", NamedTextColor.RED))
