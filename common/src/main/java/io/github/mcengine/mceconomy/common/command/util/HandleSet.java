@@ -58,6 +58,16 @@ public class HandleSet implements IEconomyCommandHandle {
 
         OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
         
+        // Validation check before attempting DB transaction
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
+            MCEconomyCommandManager.send(sender, Component.text()
+                .append(Component.text("Player ", NamedTextColor.RED))
+                .append(Component.text(targetName, NamedTextColor.WHITE))
+                .append(Component.text(" not found.", NamedTextColor.RED))
+                .build());
+            return;
+        }
+
         provider.setCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
             if (success) {
                 MCEconomyCommandManager.send(sender, Component.text()
