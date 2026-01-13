@@ -26,6 +26,13 @@ allprojects {
 }
 
 subprojects {
+    // LEAF PROJECT CHECK (The Fix)
+    // If a project has children (like ':platform' has ':platform:papermc'),
+    // it is just a container folder. We skip the build logic for it.
+    if (!project.childProjects.isEmpty()) {
+        return
+    }
+
     apply plugin: 'java'
     apply plugin: 'com.gradleup.shadow'
 
