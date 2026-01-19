@@ -54,6 +54,21 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     }
 
     /**
+     * Validates if the provided coin type is a valid column name.
+     * Use this to prevent SQL Injection attacks via column name manipulation.
+     *
+     * @param coinType The coin type string to check.
+     * @return true if valid, false otherwise.
+     */
+    private boolean isValidCoinType(String coinType) {
+        if (coinType == null) return false;
+        return coinType.equalsIgnoreCase("coin") ||
+               coinType.equalsIgnoreCase("copper") ||
+               coinType.equalsIgnoreCase("silver") ||
+               coinType.equalsIgnoreCase("gold");
+    }
+
+    /**
      * Inserts a player into the database if they do not already exist.
      * Uses INSERT IGNORE to handle existing primary keys gracefully.
      *
@@ -82,6 +97,8 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public int getCoin(String playerUuid, String coinType) {
+        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
+
         ensurePlayerExist(playerUuid);
         String sql = "SELECT " + coinType + " FROM mceconomy WHERE player_uuid = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -104,6 +121,8 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean setCoin(String playerUuid, String coinType, int amount) {
+        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
+
         ensurePlayerExist(playerUuid);
         String sql = "UPDATE mceconomy SET " + coinType + " = ? WHERE player_uuid = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -127,6 +146,7 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean addCoin(String playerUuid, String coinType, int amount) {
+        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
         return setCoin(playerUuid, coinType, getCoin(playerUuid, coinType) + amount);
     }
 
@@ -141,6 +161,7 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean minusCoin(String playerUuid, String coinType, int amount) {
+        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
         int currentBalance = getCoin(playerUuid, coinType);
         if (currentBalance >= amount) {
             return setCoin(playerUuid, coinType, currentBalance - amount);
@@ -160,6 +181,7 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean sendCoin(String senderUuid, String receiverUuid, String coinType, int amount) {
+        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
         int senderBalance = getCoin(senderUuid, coinType);
         if (senderBalance >= amount) {
             // Note: In a production environment, use SQL Transactions (commit/rollback) here.
