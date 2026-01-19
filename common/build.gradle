@@ -1,6 +1,6 @@
 /**
  * MCEconomy Common Module
- * Shared logic and internal utilities for the MCEngine ecosystem.
+ * Shared logic and internal utilities for the MCEconomy ecosystem.
  */
 plugins {
     id 'java-library'

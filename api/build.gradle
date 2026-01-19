@@ -1,6 +1,6 @@
 /**
  * MCEconomy API Module
- * Public interfaces for the MCEngine ecosystem.
+ * Public interfaces for the MCEconomy ecosystem.
  */
 plugins {
     id 'java-library'

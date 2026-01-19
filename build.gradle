@@ -1,5 +1,5 @@
 /**
- * MCEngine Root Configuration
+ * MCEconomy Root Configuration
  * Central build logic for all MCEconomy modules.
  */
 plugins {
