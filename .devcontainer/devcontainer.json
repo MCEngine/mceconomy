@@ -44,10 +44,7 @@
 
                 // --- UTILITIES ---
                 "redhat.vscode-yaml",
-                "editorconfig.editorconfig",
-
-                // AI Assistant (Free Forever for Individuals)
-                "codeium.codeium"
+                "editorconfig.editorconfig"
             ]
         }
     },
@@ -55,3 +52,4 @@
     "postCreateCommand": "echo '--- VERSIONS ---' && java -version && gradle --version && git --version",
     "remoteUser": "vscode"
 }
+
