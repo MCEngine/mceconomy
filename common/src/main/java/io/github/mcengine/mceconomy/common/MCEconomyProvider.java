@@ -107,22 +107,24 @@ public class MCEconomyProvider {
     /**
      * Gets the balance of the default 'coin' type asynchronously.
      *
-     * @param playerUuid The UUID of the player.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account (e.g., "PLAYER", "CLAN").
      * @return A Future that completes with the current balance.
      */
-    public CompletableFuture<Integer> getCoin(String playerUuid) {
-        return getCoin(playerUuid, DEFAULT_COIN);
+    public CompletableFuture<Integer> getCoin(String accountUuid, String accountType) {
+        return getCoin(accountUuid, accountType, DEFAULT_COIN);
     }
 
     /**
      * Gets the balance for a specific coin type asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The type of currency (e.g., "gold", "silver").
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The type of currency (e.g., "gold", "silver").
      * @return A Future that completes with the current balance.
      */
-    public CompletableFuture<Integer> getCoin(String playerUuid, String coinType) {
-        return runAsync(() -> db.getCoin(playerUuid, coinType));
+    public CompletableFuture<Integer> getCoin(String accountUuid, String accountType, String coinType) {
+        return runAsync(() -> db.getCoin(accountUuid, accountType, coinType));
     }
 
     // --- SETTERS ---
@@ -130,24 +132,26 @@ public class MCEconomyProvider {
     /**
      * Sets the balance of the default 'coin' type asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @param amount     The new amount to set.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param amount      The new amount to set.
      * @return A Future that completes with true if successful.
      */
-    public CompletableFuture<Boolean> setCoin(String playerUuid, int amount) {
-        return setCoin(playerUuid, DEFAULT_COIN, amount);
+    public CompletableFuture<Boolean> setCoin(String accountUuid, String accountType, int amount) {
+        return setCoin(accountUuid, accountType, DEFAULT_COIN, amount);
     }
 
     /**
      * Sets the balance for a specific coin type asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The type of currency.
-     * @param amount     The new amount to set.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The type of currency.
+     * @param amount      The new amount to set.
      * @return A Future that completes with true if successful.
      */
-    public CompletableFuture<Boolean> setCoin(String playerUuid, String coinType, int amount) {
-        return runAsync(() -> db.setCoin(playerUuid, coinType, amount));
+    public CompletableFuture<Boolean> setCoin(String accountUuid, String accountType, String coinType, int amount) {
+        return runAsync(() -> db.setCoin(accountUuid, accountType, coinType, amount));
     }
 
     // --- ADD ---
@@ -155,24 +159,26 @@ public class MCEconomyProvider {
     /**
      * Adds an amount to the default 'coin' balance asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @param amount     Amount to add.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param amount      Amount to add.
      * @return A Future that completes with true if successful.
      */
-    public CompletableFuture<Boolean> addCoin(String playerUuid, int amount) {
-        return addCoin(playerUuid, DEFAULT_COIN, amount);
+    public CompletableFuture<Boolean> addCoin(String accountUuid, String accountType, int amount) {
+        return addCoin(accountUuid, accountType, DEFAULT_COIN, amount);
     }
 
     /**
      * Adds an amount to a specific coin type balance asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The type of currency.
-     * @param amount     Amount to add.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The type of currency.
+     * @param amount      Amount to add.
      * @return A Future that completes with true if successful.
      */
-    public CompletableFuture<Boolean> addCoin(String playerUuid, String coinType, int amount) {
-        return runAsync(() -> db.addCoin(playerUuid, coinType, amount));
+    public CompletableFuture<Boolean> addCoin(String accountUuid, String accountType, String coinType, int amount) {
+        return runAsync(() -> db.addCoin(accountUuid, accountType, coinType, amount));
     }
 
     // --- MINUS ---
@@ -180,63 +186,70 @@ public class MCEconomyProvider {
     /**
      * Subtracts an amount from the default 'coin' balance asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @param amount     Amount to subtract.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param amount      Amount to subtract.
      * @return A Future that completes with true if successful, false if insufficient funds.
      */
-    public CompletableFuture<Boolean> minusCoin(String playerUuid, int amount) {
-        return minusCoin(playerUuid, DEFAULT_COIN, amount);
+    public CompletableFuture<Boolean> minusCoin(String accountUuid, String accountType, int amount) {
+        return minusCoin(accountUuid, accountType, DEFAULT_COIN, amount);
     }
 
     /**
      * Subtracts an amount from a specific coin type balance asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The type of currency.
-     * @param amount     Amount to subtract.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The type of currency.
+     * @param amount      Amount to subtract.
      * @return A Future that completes with true if successful, false if insufficient funds.
      */
-    public CompletableFuture<Boolean> minusCoin(String playerUuid, String coinType, int amount) {
-        return runAsync(() -> db.minusCoin(playerUuid, coinType, amount));
+    public CompletableFuture<Boolean> minusCoin(String accountUuid, String accountType, String coinType, int amount) {
+        return runAsync(() -> db.minusCoin(accountUuid, accountType, coinType, amount));
     }
 
     // --- SEND ---
 
     /**
-     * Sends default 'coin' currency from one player to another asynchronously.
+     * Sends default 'coin' currency from one account to another asynchronously.
      *
-     * @param senderUuid   Sender player UUID.
-     * @param receiverUuid Receiver player UUID.
+     * @param senderUuid   Sender account UUID.
+     * @param senderType   Sender account type.
+     * @param receiverUuid Receiver account UUID.
+     * @param receiverType Receiver account type.
      * @param amount       Amount to transfer.
      * @return A Future that completes with true if successful.
      */
-    public CompletableFuture<Boolean> sendCoin(String senderUuid, String receiverUuid, int amount) {
-        return sendCoin(senderUuid, receiverUuid, DEFAULT_COIN, amount);
+    public CompletableFuture<Boolean> sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, int amount) {
+        return sendCoin(senderUuid, senderType, receiverUuid, receiverType, DEFAULT_COIN, amount);
     }
 
     /**
-     * Sends a specific coin type from one player to another asynchronously.
+     * Sends a specific coin type from one account to another asynchronously.
      *
-     * @param senderUuid   Sender player UUID.
-     * @param receiverUuid Receiver player UUID.
+     * @param senderUuid   Sender account UUID.
+     * @param senderType   Sender account type.
+     * @param receiverUuid Receiver account UUID.
+     * @param receiverType Receiver account type.
      * @param coinType     The type of currency.
      * @param amount       Amount to transfer.
      * @return A Future that completes with true if successful, false if sender has insufficient funds.
      */
-    public CompletableFuture<Boolean> sendCoin(String senderUuid, String receiverUuid, String coinType, int amount) {
-        return runAsync(() -> db.sendCoin(senderUuid, receiverUuid, coinType, amount));
+    public CompletableFuture<Boolean> sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, String coinType, int amount) {
+        return runAsync(() -> db.sendCoin(senderUuid, senderType, receiverUuid, receiverType, coinType, amount));
     }
 
     // --- UTILITY ---
 
     /**
-     * Ensures the player has an entry in the database asynchronously.
+     * Ensures the account has an entry in the database asynchronously.
      *
-     * @param playerUuid The UUID of the player.
-     * @return A Future that completes with true if the player exists or was successfully created.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @return A Future that completes with true if the account exists or was successfully created.
      */
-    public CompletableFuture<Boolean> ensurePlayerExist(String playerUuid) {
-        return runAsync(() -> db.ensurePlayerExist(playerUuid));
+    public CompletableFuture<Boolean> ensureAccountExist(String accountUuid, String accountType) {
+        return runAsync(() -> db.ensureAccountExist(accountUuid, accountType));
     }
 
     /**

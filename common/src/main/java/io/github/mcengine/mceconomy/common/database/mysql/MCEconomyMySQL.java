@@ -37,17 +37,20 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     }
 
     /**
-     * Creates the mceconomy table if it does not already exist in the database.
+     * Creates the economy_accounts table if it does not already exist.
+     * Uses a composite primary key (account_uuid + account_type).
      *
      * @throws SQLException If an error occurs during table creation.
      */
     private void createTable() throws SQLException {
-        String sql = "CREATE TABLE IF NOT EXISTS mceconomy (" +
-                     "player_uuid VARCHAR(36) PRIMARY KEY NOT NULL, " +
+        String sql = "CREATE TABLE IF NOT EXISTS economy_accounts (" +
+                     "account_uuid VARCHAR(36) NOT NULL, " +
+                     "account_type VARCHAR(32) NOT NULL, " +
                      "coin BIGINT NOT NULL DEFAULT 0, " +
                      "copper BIGINT NOT NULL DEFAULT 0, " +
                      "silver BIGINT NOT NULL DEFAULT 0, " +
-                     "gold BIGINT NOT NULL DEFAULT 0)";
+                     "gold BIGINT NOT NULL DEFAULT 0, " +
+                     "PRIMARY KEY (account_uuid, account_type))";
         try (Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         }
@@ -69,17 +72,19 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     }
 
     /**
-     * Inserts a player into the database if they do not already exist.
+     * Inserts an account into the database if it does not already exist.
      * Uses INSERT IGNORE to handle existing primary keys gracefully.
      *
-     * @param playerUuid The UUID of the player to verify.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
      * @return true if the operation executed successfully, false if a SQL error occurred.
      */
     @Override
-    public boolean ensurePlayerExist(String playerUuid) {
-        String sql = "INSERT IGNORE INTO mceconomy (player_uuid) VALUES (?)";
+    public boolean ensureAccountExist(String accountUuid, String accountType) {
+        String sql = "INSERT IGNORE INTO economy_accounts (account_uuid, account_type) VALUES (?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, playerUuid);
+            pstmt.setString(1, accountUuid);
+            pstmt.setString(2, accountType);
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -89,20 +94,22 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     }
 
     /**
-     * Retrieves the balance of a specific coin type for a player.
+     * Retrieves the balance of a specific coin type for an account.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The column name (coin, copper, silver, gold).
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The column name (coin, copper, silver, gold).
      * @return The amount found in the database, or 0 if an error occurs.
      */
     @Override
-    public int getCoin(String playerUuid, String coinType) {
+    public int getCoin(String accountUuid, String accountType, String coinType) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
 
-        ensurePlayerExist(playerUuid);
-        String sql = "SELECT " + coinType + " FROM mceconomy WHERE player_uuid = ?";
+        ensureAccountExist(accountUuid, accountType);
+        String sql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, playerUuid);
+            pstmt.setString(1, accountUuid);
+            pstmt.setString(2, accountType);
             ResultSet rs = pstmt.executeQuery();
             if (rs.next()) return rs.getInt(1);
         } catch (SQLException e) {
@@ -112,22 +119,24 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     }
 
     /**
-     * Sets the balance of a specific coin type for a player to a specific amount.
+     * Sets the balance of a specific coin type for an account to a specific amount.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The column name.
-     * @param amount     The new value to set.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The column name.
+     * @param amount      The new value to set.
      * @return true if the update was successful, false on error.
      */
     @Override
-    public boolean setCoin(String playerUuid, String coinType, int amount) {
+    public boolean setCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
 
-        ensurePlayerExist(playerUuid);
-        String sql = "UPDATE mceconomy SET " + coinType + " = ? WHERE player_uuid = ?";
+        ensureAccountExist(accountUuid, accountType);
+        String sql = "UPDATE economy_accounts SET " + coinType + " = ? WHERE account_uuid = ? AND account_type = ?";
         try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, amount);
-            pstmt.setString(2, playerUuid);
+            pstmt.setString(2, accountUuid);
+            pstmt.setString(3, accountType);
             pstmt.executeUpdate();
             return true;
         } catch (SQLException e) {
@@ -137,57 +146,59 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     }
 
     /**
-     * Adds an amount to the player's current balance for a specific coin type.
+     * Adds an amount to the account's current balance for a specific coin type.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The column name.
-     * @param amount     The amount to add.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The column name.
+     * @param amount      The amount to add.
      * @return true if successful, false on error.
      */
     @Override
-    public boolean addCoin(String playerUuid, String coinType, int amount) {
+    public boolean addCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        return setCoin(playerUuid, coinType, getCoin(playerUuid, coinType) + amount);
+        return setCoin(accountUuid, accountType, coinType, getCoin(accountUuid, accountType, coinType) + amount);
     }
 
     /**
-     * Subtracts an amount from the player's current balance for a specific coin type.
+     * Subtracts an amount from the account's current balance for a specific coin type.
      * Prevents the balance from dropping below 0.
      *
-     * @param playerUuid The UUID of the player.
-     * @param coinType   The column name.
-     * @param amount     The amount to subtract.
+     * @param accountUuid The UUID of the account.
+     * @param accountType The type of account.
+     * @param coinType    The column name.
+     * @param amount      The amount to subtract.
      * @return true if transaction succeeded, false if insufficient funds or error.
      */
     @Override
-    public boolean minusCoin(String playerUuid, String coinType, int amount) {
+    public boolean minusCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        int currentBalance = getCoin(playerUuid, coinType);
+        int currentBalance = getCoin(accountUuid, accountType, coinType);
         if (currentBalance >= amount) {
-            return setCoin(playerUuid, coinType, currentBalance - amount);
+            return setCoin(accountUuid, accountType, coinType, currentBalance - amount);
         }
         return false;
     }
 
     /**
-     * Transfers an amount of a specific coin type from one player to another.
-     * Verifies that the sender has enough balance before proceeding.
+     * Transfers an amount of a specific coin type from one account to another.
      *
-     * @param senderUuid   The UUID of the player sending the coins.
-     * @param receiverUuid The UUID of the player receiving the coins.
+     * @param senderUuid   The UUID of the sender.
+     * @param senderType   The account type of the sender.
+     * @param receiverUuid The UUID of the receiver.
+     * @param receiverType The account type of the receiver.
      * @param coinType     The column name.
      * @param amount       The amount to transfer.
      * @return true if transfer succeeded, false if sender has insufficient funds.
      */
     @Override
-    public boolean sendCoin(String senderUuid, String receiverUuid, String coinType, int amount) {
+    public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        int senderBalance = getCoin(senderUuid, coinType);
+        int senderBalance = getCoin(senderUuid, senderType, coinType);
         if (senderBalance >= amount) {
-            // Note: In a production environment, use SQL Transactions (commit/rollback) here.
-            boolean removed = setCoin(senderUuid, coinType, senderBalance - amount);
+            boolean removed = setCoin(senderUuid, senderType, coinType, senderBalance - amount);
             if (removed) {
-                return addCoin(receiverUuid, coinType, amount);
+                return addCoin(receiverUuid, receiverType, coinType, amount);
             }
         }
         return false;

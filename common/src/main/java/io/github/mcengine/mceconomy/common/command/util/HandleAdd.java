@@ -68,7 +68,8 @@ public class HandleAdd implements IEconomyCommandHandle {
             return;
         }
 
-        provider.addCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
+        // Updated: Added "PLAYER" account type
+        provider.addCoin(target.getUniqueId().toString(), "PLAYER", coinType, amount).thenAccept(success -> {
             if (success) {
                 MCEconomyCommandManager.send(sender, Component.text()
                     .append(Component.text("Added ", NamedTextColor.GREEN))

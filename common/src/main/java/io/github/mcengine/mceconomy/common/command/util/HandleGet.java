@@ -80,7 +80,8 @@ public class HandleGet implements IEconomyCommandHandle {
         // Capture name for lambda (OfflinePlayer#getName() can be null, handle gracefully)
         String targetName = target.getName() != null ? target.getName() : "Unknown";
 
-        provider.getCoin(target.getUniqueId().toString(), coinType).thenAccept(balance -> {
+        // Updated: Added "PLAYER" account type
+        provider.getCoin(target.getUniqueId().toString(), "PLAYER", coinType).thenAccept(balance -> {
             // Message variation depending on if checking self or other
             if (sender instanceof Player && ((Player) sender).getUniqueId().equals(target.getUniqueId())) {
                 MCEconomyCommandManager.send(sender, Component.text()

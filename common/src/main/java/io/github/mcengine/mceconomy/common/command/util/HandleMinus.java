@@ -68,7 +68,8 @@ public class HandleMinus implements IEconomyCommandHandle {
             return;
         }
 
-        provider.minusCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
+        // Updated: Added "PLAYER" account type
+        provider.minusCoin(target.getUniqueId().toString(), "PLAYER", coinType, amount).thenAccept(success -> {
             if (success) {
                 MCEconomyCommandManager.send(sender, Component.text()
                     .append(Component.text("Removed ", NamedTextColor.GREEN))
