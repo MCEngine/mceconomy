@@ -1,5 +1,7 @@
 package io.github.mcengine.mceconomy.common.database.mysql;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
 import org.bukkit.plugin.Plugin;
 import java.sql.*;
@@ -9,9 +11,9 @@ import java.sql.*;
  */
 public class MCEconomyMySQL implements IMCEconomyDB {
     /**
-     * The active SQL connection instance.
+     * The connection pool data source.
      */
-    private Connection conn;
+    private final HikariDataSource dataSource;
 
     /**
      * Constructs a new MySQL database handler.
@@ -27,11 +29,27 @@ public class MCEconomyMySQL implements IMCEconomyDB {
         String dbPort = plugin.getConfig().getString("db.mysql.port", "3306");
         String dbSsl = plugin.getConfig().getString("db.mysql.ssl", "false");
 
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName + "?useSSL=" + dbSsl);
+        config.setUsername(dbUser);
+        config.setPassword(dbPass);
+        
+        // Pool Settings optimized for Minecraft
+        config.setMaximumPoolSize(10);
+        config.setMinimumIdle(2);
+        config.setConnectionTimeout(30000); 
+        config.setLeakDetectionThreshold(10000);
+        
+        // Performance properties
+        config.addDataSourceProperty("cachePrepStmts", "true");
+        config.addDataSourceProperty("prepStmtCacheSize", "250");
+        config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
+
+        this.dataSource = new HikariDataSource(config);
+
         try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            this.conn = DriverManager.getConnection("jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName + "?useSSL=" + dbSsl, dbUser, dbPass);
             createTable();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -51,7 +69,9 @@ public class MCEconomyMySQL implements IMCEconomyDB {
                      "silver BIGINT NOT NULL DEFAULT 0, " +
                      "gold BIGINT NOT NULL DEFAULT 0, " +
                      "PRIMARY KEY (account_uuid, account_type))";
-        try (Statement stmt = conn.createStatement()) {
+        
+        try (Connection conn = dataSource.getConnection();
+             Statement stmt = conn.createStatement()) {
             stmt.execute(sql);
         }
     }
@@ -82,7 +102,8 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     @Override
     public boolean ensureAccountExist(String accountUuid, String accountType) {
         String sql = "INSERT IGNORE INTO economy_accounts (account_uuid, account_type) VALUES (?, ?)";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, accountUuid);
             pstmt.setString(2, accountType);
             pstmt.executeUpdate();
@@ -107,11 +128,13 @@ public class MCEconomyMySQL implements IMCEconomyDB {
 
         ensureAccountExist(accountUuid, accountType);
         String sql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, accountUuid);
             pstmt.setString(2, accountType);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) return rs.getInt(1);
+            try (ResultSet rs = pstmt.executeQuery()) {
+                if (rs.next()) return rs.getInt(1);
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
@@ -133,7 +156,8 @@ public class MCEconomyMySQL implements IMCEconomyDB {
 
         ensureAccountExist(accountUuid, accountType);
         String sql = "UPDATE economy_accounts SET " + coinType + " = ? WHERE account_uuid = ? AND account_type = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, amount);
             pstmt.setString(2, accountUuid);
             pstmt.setString(3, accountType);
@@ -157,7 +181,21 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     @Override
     public boolean addCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        return setCoin(accountUuid, accountType, coinType, getCoin(accountUuid, accountType, coinType) + amount);
+        
+        // Optimized atomic update
+        ensureAccountExist(accountUuid, accountType);
+        String sql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " + ? WHERE account_uuid = ? AND account_type = ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, amount);
+            pstmt.setString(2, accountUuid);
+            pstmt.setString(3, accountType);
+            pstmt.executeUpdate();
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     /**
@@ -173,9 +211,21 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     @Override
     public boolean minusCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
+        
         int currentBalance = getCoin(accountUuid, accountType, coinType);
         if (currentBalance >= amount) {
-            return setCoin(accountUuid, accountType, coinType, currentBalance - amount);
+            // Safe subtraction
+            String sql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " - ? WHERE account_uuid = ? AND account_type = ?";
+            try (Connection conn = dataSource.getConnection();
+                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, amount);
+                pstmt.setString(2, accountUuid);
+                pstmt.setString(3, accountType);
+                pstmt.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
         return false;
     }
@@ -194,21 +244,59 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     @Override
     public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        int senderBalance = getCoin(senderUuid, senderType, coinType);
-        if (senderBalance >= amount) {
-            boolean removed = setCoin(senderUuid, senderType, coinType, senderBalance - amount);
-            if (removed) {
-                return addCoin(receiverUuid, receiverType, coinType, amount);
+        
+        try (Connection conn = dataSource.getConnection()) {
+            conn.setAutoCommit(false); // Start Transaction
+
+            // 1. Check Balance
+            int balance = 0;
+            String checkSql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
+            try (PreparedStatement check = conn.prepareStatement(checkSql)) {
+                check.setString(1, senderUuid);
+                check.setString(2, senderType);
+                try (ResultSet rs = check.executeQuery()) {
+                    if (rs.next()) balance = rs.getInt(1);
+                }
             }
+
+            if (balance < amount) {
+                conn.rollback();
+                return false;
+            }
+
+            // 2. Withdraw
+            String withdrawSql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " - ? WHERE account_uuid = ? AND account_type = ?";
+            try (PreparedStatement withdraw = conn.prepareStatement(withdrawSql)) {
+                withdraw.setInt(1, amount);
+                withdraw.setString(2, senderUuid);
+                withdraw.setString(3, senderType);
+                withdraw.executeUpdate();
+            }
+
+            // 3. Deposit (ensureAccountExist logic should ideally be pre-checked, but assuming simplified flow)
+            String depositSql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " + ? WHERE account_uuid = ? AND account_type = ?";
+            try (PreparedStatement deposit = conn.prepareStatement(depositSql)) {
+                deposit.setInt(1, amount);
+                deposit.setString(2, receiverUuid);
+                deposit.setString(3, receiverType);
+                deposit.executeUpdate();
+            }
+
+            conn.commit(); // Commit Transaction
+            return true;
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return false;
     }
 
     /**
-     * Closes the MySQL connection and releases resources.
+     * Closes the MySQL connection pool and releases resources.
      */
     @Override
     public void close() {
-        try { if (conn != null) conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
     }
 }

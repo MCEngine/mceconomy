@@ -15,6 +15,11 @@ public class MCEconomySQLite implements IMCEconomyDB {
     private Connection conn;
 
     /**
+     * Lock object for thread synchronization.
+     */
+    private final Object lock = new Object();
+
+    /**
      * Constructs a new SQLite database handler.
      * Creates the plugin data folder and database file if they do not exist.
      *
@@ -48,8 +53,10 @@ public class MCEconomySQLite implements IMCEconomyDB {
                      "silver INTEGER NOT NULL DEFAULT 0, " +
                      "gold INTEGER NOT NULL DEFAULT 0, " +
                      "PRIMARY KEY (account_uuid, account_type))";
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(sql);
+        synchronized (lock) {
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute(sql);
+            }
         }
     }
 
@@ -79,14 +86,16 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public boolean ensureAccountExist(String accountUuid, String accountType) {
         String sql = "INSERT OR IGNORE INTO economy_accounts (account_uuid, account_type) VALUES (?, ?)";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, accountUuid);
-            pstmt.setString(2, accountType);
-            pstmt.executeUpdate();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+        synchronized (lock) {
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, accountUuid);
+                pstmt.setString(2, accountType);
+                pstmt.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            }
         }
     }
 
@@ -102,15 +111,17 @@ public class MCEconomySQLite implements IMCEconomyDB {
     public int getCoin(String accountUuid, String accountType, String coinType) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
 
-        ensureAccountExist(accountUuid, accountType);
-        String sql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setString(1, accountUuid);
-            pstmt.setString(2, accountType);
-            ResultSet rs = pstmt.executeQuery();
-            if (rs.next()) return rs.getInt(1);
-        } catch (SQLException e) {
-            e.printStackTrace();
+        synchronized (lock) {
+            ensureAccountExist(accountUuid, accountType);
+            String sql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setString(1, accountUuid);
+                pstmt.setString(2, accountType);
+                ResultSet rs = pstmt.executeQuery();
+                if (rs.next()) return rs.getInt(1);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
         }
         return 0;
     }
@@ -128,17 +139,19 @@ public class MCEconomySQLite implements IMCEconomyDB {
     public boolean setCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
 
-        ensureAccountExist(accountUuid, accountType);
-        String sql = "UPDATE economy_accounts SET " + coinType + " = ? WHERE account_uuid = ? AND account_type = ?";
-        try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
-            pstmt.setInt(1, amount);
-            pstmt.setString(2, accountUuid);
-            pstmt.setString(3, accountType);
-            pstmt.executeUpdate();
-            return true;
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return false;
+        synchronized (lock) {
+            ensureAccountExist(accountUuid, accountType);
+            String sql = "UPDATE economy_accounts SET " + coinType + " = ? WHERE account_uuid = ? AND account_type = ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, amount);
+                pstmt.setString(2, accountUuid);
+                pstmt.setString(3, accountType);
+                pstmt.executeUpdate();
+                return true;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
+            }
         }
     }
 
@@ -154,7 +167,9 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public boolean addCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        return setCoin(accountUuid, accountType, coinType, getCoin(accountUuid, accountType, coinType) + amount);
+        synchronized (lock) {
+            return setCoin(accountUuid, accountType, coinType, getCoin(accountUuid, accountType, coinType) + amount);
+        }
     }
 
     /**
@@ -170,9 +185,11 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public boolean minusCoin(String accountUuid, String accountType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        int currentBalance = getCoin(accountUuid, accountType, coinType);
-        if (currentBalance >= amount) {
-            return setCoin(accountUuid, accountType, coinType, currentBalance - amount);
+        synchronized (lock) {
+            int currentBalance = getCoin(accountUuid, accountType, coinType);
+            if (currentBalance >= amount) {
+                return setCoin(accountUuid, accountType, coinType, currentBalance - amount);
+            }
         }
         return false;
     }
@@ -191,11 +208,13 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, String coinType, int amount) {
         if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        int senderBalance = getCoin(senderUuid, senderType, coinType);
-        if (senderBalance >= amount) {
-            boolean removed = setCoin(senderUuid, senderType, coinType, senderBalance - amount);
-            if (removed) {
-                return addCoin(receiverUuid, receiverType, coinType, amount);
+        synchronized (lock) {
+            int senderBalance = getCoin(senderUuid, senderType, coinType);
+            if (senderBalance >= amount) {
+                boolean removed = setCoin(senderUuid, senderType, coinType, senderBalance - amount);
+                if (removed) {
+                    return addCoin(receiverUuid, receiverType, coinType, amount);
+                }
             }
         }
         return false;
@@ -206,6 +225,8 @@ public class MCEconomySQLite implements IMCEconomyDB {
      */
     @Override
     public void close() {
-        try { if (conn != null) conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+        synchronized (lock) {
+            try { if (conn != null) conn.close(); } catch (SQLException e) { e.printStackTrace(); }
+        }
     }
 }
