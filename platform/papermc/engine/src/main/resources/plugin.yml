@@ -20,3 +20,6 @@ permissions:
   mceconomy.set.coin:
     description: Allows setting a player's coin balance.
     default: op
+  mceconomy.get.other:
+    description: Allows checking other players' balances.
+    default: op
