@@ -28,15 +28,16 @@ public class HandleEnsurePlayerExist implements Listener {
      * Triggers when a player joins. 
      * Uses MONITOR priority to ensure it runs even if other plugins cancel events, 
      * as we just want to ensure the DB record exists.
-     * * @param event The PlayerJoinEvent.
+     * @param event The PlayerJoinEvent.
      */
     @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerJoin(PlayerJoinEvent event) {
         String uuid = event.getPlayer().getUniqueId().toString();
         String playerName = event.getPlayer().getName();
         
-        // ensurePlayerExist is asynchronous inside the MCEconomyProvider.
-        provider.ensurePlayerExist(uuid).thenAccept(success -> {
+        // ensureAccountExist is asynchronous inside the MCEconomyProvider.
+        // Updated: Added "PLAYER" account type to match the new API.
+        provider.ensureAccountExist(uuid, "PLAYER").thenAccept(success -> {
             if (!success) {
                 // Log warning using Bukkit logger instead of System.err
                 Bukkit.getLogger().warning("[MCEconomy] Failed to ensure database record for player: " + playerName);

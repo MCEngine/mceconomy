@@ -70,7 +70,8 @@ public class HandleSend implements IEconomyCommandHandle {
             return;
         }
 
-        provider.sendCoin(player.getUniqueId().toString(), target.getUniqueId().toString(), coinType, amount)
+        // Updated: Added "PLAYER" account type for both Sender and Receiver
+        provider.sendCoin(player.getUniqueId().toString(), "PLAYER", target.getUniqueId().toString(), "PLAYER", coinType, amount)
             .thenAccept(success -> {
                 if (success) {
                     MCEconomyCommandManager.send(player, Component.text()

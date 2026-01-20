@@ -68,7 +68,8 @@ public class HandleSet implements IEconomyCommandHandle {
             return;
         }
 
-        provider.setCoin(target.getUniqueId().toString(), coinType, amount).thenAccept(success -> {
+        // Updated: Added "PLAYER" account type
+        provider.setCoin(target.getUniqueId().toString(), "PLAYER", coinType, amount).thenAccept(success -> {
             if (success) {
                 MCEconomyCommandManager.send(sender, Component.text()
                     .append(Component.text("Set ", NamedTextColor.GREEN))
