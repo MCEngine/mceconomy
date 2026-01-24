@@ -3,21 +3,23 @@ name: Build MCEconomy
 on:
   push:
     branches: [ "master" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "master" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    # Added permissions to allow publishing to GitHub Packages
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
       # 1. Check out the code
       - name: Checkout Code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       # 2. Set up Java 21
       - name: Set up JDK 21
@@ -25,29 +27,73 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
-          # This helper can also handle server settings for maven
-          server-id: github 
+          server-id: github
 
       # 3. Grant execute permission
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Fix Gradlew Permissions
+        run: |
+          chmod +x gradlew
+          sed -i 's/\r$//' gradlew
 
-      # 4. Build with Gradle
-      - name: Build and Publish with Gradle
-        run: ./gradlew clean build shadowJar publish
+      # 4. Check Iteration from gradle.properties
+      # We extract the version specifically for the engine module to use for tagging
+      - name: Check Iteration
+        id: check_iteration
+        run: |
+          ITERATION=$(grep 'project-iteration=' gradle.properties | cut -d'=' -f2 | tr -d '\r')
+          VERSION=$(grep 'mceconomy-engine.version=' gradle.properties | cut -d'=' -f2 | tr -d '\r')
+          echo "iteration=$ITERATION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      # 5a. Build (Test Only)
+      # Run for Pull Requests to ensure code compiles
+      - name: Build (Test Only)
+        if: ${{ github.event_name == 'pull_request' }}
+        run: ./gradlew clean build shadowJar
         env:
           BUILD_NUMBER: ${{ github.run_number }}
-          # Use your custom secrets here
           USER_GITHUB_NAME: ${{ github.actor }}
           USER_GITHUB_TOKEN: ${{ secrets.AGENT_TOKEN }}
 
-      # 5. Save the JARs
+      # 5b. Build & Publish (DEV)
+      # Creates versions like 2026.0.0-1-9-DEV
+      - name: Publish Dev Build
+        id: publish_dev
+        if: ${{ (github.event_name == 'push' || github.event_name == 'pull_request') && !startsWith(github.ref, 'refs/tags/') && steps.check_iteration.outputs.iteration != '0' }}
+        run: ./gradlew clean build shadowJar publish
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+          USER_GITHUB_NAME: ${{ github.actor }}
+          USER_GITHUB_TOKEN: ${{ secrets.AGENT_TOKEN }}
+
+      # 5c. Build & Publish (RELEASE)
+      # Creates versions like 2026.0.0-1
+      - name: Publish Release
+        id: publish_release
+        if: ${{ steps.publish_dev.outcome == 'success' && github.event_name == 'push' && github.ref == 'refs/heads/master' && steps.check_iteration.outputs.iteration != '0' }}
+        run: ./gradlew clean build shadowJar publish
+        env:
+          DEV_RELEASE_VERSION: ${{ steps.check_iteration.outputs.version }} 
+          USER_GITHUB_NAME: ${{ github.actor }}
+          USER_GITHUB_TOKEN: ${{ secrets.AGENT_TOKEN }}
+
+      # 6. Auto Create Tag
+      # Only triggers after a successful Release publish on master
+      - name: Create Git Tag
+        if: ${{ steps.publish_release.outcome == 'success' }}
+        run: |
+          TAG_NAME="v${{ steps.check_iteration.outputs.version }}-${{ steps.check_iteration.outputs.iteration }}"
+          git tag $TAG_NAME
+          git push origin $TAG_NAME
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 7. Save the JARs
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: MCEngine-Build-${{ github.run_number }}
+          name: MCEconomy-Build-${{ github.run_number }}
           path: |
-            **/build/libs/*-all.jar
             **/build/libs/*.jar
             !**/build/libs/*-plain.jar
           retention-days: 1

@@ -40,27 +40,31 @@ subprojects {
     def propName = "mceconomy-${project.name}"
     
     // 1. Detect Build Environment
-    String buildNum = System.getenv("BUILD_NUMBER")
+    String buildNum = System.getenv("BUILD_NUMBER") // Passed from GitHub Action
+    String devRelease = System.getenv("DEV_RELEASE_VERSION") // Passed from GitHub Actions
+    String releaseTag = System.getenv("RELEASE_VERSION") // Passed from GitHub Actions
     boolean isDevBuild = (buildNum != null && !buildNum.isEmpty())
+    boolean isDevReleaseBuild = (devRelease != null && !devRelease.isEmpty())
 
     // 2. Calculate the Version String IMMEDIATELY
-    // We store this in a local variable so it can't be changed later.
     String calculatedVersion = "unspecified"
     
-    if (project.hasProperty("${propName}.version")) {
+    if (releaseTag != null && !releaseTag.isEmpty()) {
+        // RELEASE STRATEGY: Use tag directly, strip "v"
+        calculatedVersion = releaseTag.replace("v", "")
+    } else if (project.hasProperty("${propName}.version")) {
         def baseVersion = project.property("${propName}.version")
-        def defaultClassifier = project.property("${propName}.classifier")
+        def iteration = project.hasProperty('project-iteration') ? project.property('project-iteration') : "1"
 
-        if (isDevBuild) {
-            // CI Strategy: "1.0.0-9-DEV"
-            calculatedVersion = "${baseVersion}-${buildNum}-DEV"
+        if (isDevBuild && !isDevReleaseBuild) {
+            // CI Dev Build: {Version}-{Iteration}-{BuildNum}-DEV
+            calculatedVersion = "${baseVersion}-${iteration}-${buildNum}-DEV"
+        } else if (isDevReleaseBuild) {
+            // CI Dev Release Build: {Version}-{Iteration}
+            calculatedVersion = "${baseVersion}-${iteration}"
         } else {
-            // Local Strategy: "1.0.0-SNAPSHOT"
-            if (defaultClassifier && !defaultClassifier.toString().isEmpty()) {
-                calculatedVersion = "${baseVersion}-${defaultClassifier}"
-            } else {
-                calculatedVersion = "${baseVersion}"
-            }
+            // Local Build: {Version}-{Iteration}-SNAPSHOT
+            calculatedVersion = "${baseVersion}-${iteration}-SNAPSHOT"
         }
     }
     
@@ -87,13 +91,7 @@ subprojects {
         archiveClassifier.set('')
 
         // 4. FORCE FILE NAME (The Ultimate Fix)
-        // We use the 'calculatedVersion' variable directly. 
-        // Since this variable is a simple String we just created, Gradle cannot mess it up.
-        if (isDevBuild) {
-            archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
-        } else {
-            archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
-        }
+        archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
     }
 
     java {
@@ -125,7 +123,7 @@ gradle.projectsEvaluated {
     // 1. SAFE LOOKUP
     def apiProject = findProject(':api')
     def commonProject = findProject(':common')
-    def engineProject = findProject(':engine')
+    def engineProject = findProject(':platform:papermc:engine')
 
     // 2. ENFORCE ORDER: API -> Common -> Engine
     if (apiProject && commonProject) {
