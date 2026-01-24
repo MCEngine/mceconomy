@@ -7,8 +7,6 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.property('mceconomy-engine.version')
-
 dependencies {
     api project(':api')
     api project(':common')
@@ -18,9 +16,9 @@ dependencies {
 }
 
 // Define variables for cleaner URL construction
-def gitOwner = project.property('git-org.name')
-def gitRepo = project.property('git-org.repository')
-def gitUrl = project.property('mceconomy-engine-artifact.url')
+def gitOwner = project.property('git-org-name')
+def gitRepo = project.property('git-org-repository')
+def gitUrl = project.property('mceconomy-engine-artifact-url')
 
 /**
  * Configure repositories for dependency resolution.
@@ -44,12 +42,12 @@ repositories {
 publishing {
     publications {
         create('mavenJava', MavenPublication) {
-            artifactId = project.property('mceconomy-engine-artifact.id')
+            artifactId = project.property('mceconomy-engine-artifact-id')
             artifact shadowJar
 
             pom {
-                name = project.property('mceconomy-engine.name')
-                description = project.property('mceconomy-engine-artifact.description')
+                name = project.property('mceconomy-engine-name')
+                description = project.property('mceconomy-engine-artifact-description')
                 url = gitUrl
 
                 developers {
@@ -92,11 +90,11 @@ publishing {
  */
 processResources {
     def props = [
-        'engine_name'       : project.property('mceconomy-engine.name'),
+        'engine_name'       : project.property('mceconomy-engine-name'),
         'project_group'     : project.group,
-        'engine_description': project.property('mceconomy-engine-artifact.description'),
+        'engine_description': project.property('mceconomy-engine-artifact-description'),
         'engine_version'    : project.version,
-        'engine_website'    : project.property('mceconomy-engine-artifact.url')
+        'engine_website'    : project.property('mceconomy-engine-artifact-url')
     ]
     inputs.properties(props)
     filteringCharset 'UTF-8'

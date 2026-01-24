@@ -14,7 +14,7 @@ tasks.named('jar') {
 
 allprojects {
     // Uses the property from gradle.properties
-    group = project.property('project.group')
+    group = project.property('project-group')
     
     repositories {
         mavenCentral()
@@ -52,8 +52,8 @@ subprojects {
     if (releaseTag != null && !releaseTag.isEmpty()) {
         // RELEASE STRATEGY: Use tag directly, strip "v"
         calculatedVersion = releaseTag.replace("v", "")
-    } else if (project.hasProperty("${propName}.version")) {
-        def baseVersion = project.property("${propName}.version")
+    } else if (project.hasProperty("${propName}-version")) {
+        def baseVersion = project.property("${propName}-version")
         def iteration = project.hasProperty('project-iteration') ? project.property('project-iteration') : "1"
 
         if (isDevBuild && !isDevReleaseBuild) {
@@ -79,8 +79,8 @@ subprojects {
     tasks.named('shadowJar') {
         // 1. Define finalBaseName
         String finalBaseName = project.name
-        if (project.hasProperty("${propName}.name")) {
-            finalBaseName = project.property("${propName}.name")
+        if (project.hasProperty("${propName}-name")) {
+            finalBaseName = project.property("${propName}-name")
         }
         
         // 2. Set Base Name & Version
