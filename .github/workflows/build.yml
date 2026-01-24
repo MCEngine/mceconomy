@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # Added permissions to allow publishing to GitHub Packages
+    permissions:
+      contents: read
+      packages: write
 
     steps:
       # 1. Check out the code
@@ -21,17 +25,21 @@ jobs:
         with:
           java-version: '21'
           distribution: 'temurin'
+          # This helper can also handle server settings for maven
+          server-id: github 
 
       # 3. Grant execute permission
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
       # 4. Build with Gradle
-      # We map GitHub's run number to the 'BUILD_NUMBER' environment variable
-      - name: Build with Gradle
-        run: ./gradlew clean build shadowJar
+      - name: Build and Publish with Gradle
+        run: ./gradlew clean build shadowJar publish
         env:
           BUILD_NUMBER: ${{ github.run_number }}
+          # Use your custom secrets here
+          USER_GITHUB_NAME: ${{ github.actor }}
+          USER_GITHUB_TOKEN: ${{ secrets.AGENT_TOKEN }}
 
       # 5. Save the JARs
       - name: Upload Build Artifacts
@@ -43,4 +51,3 @@ jobs:
             **/build/libs/*.jar
             !**/build/libs/*-plain.jar
           retention-days: 1
-
