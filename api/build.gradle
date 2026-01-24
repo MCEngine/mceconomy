@@ -7,8 +7,6 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.property('mceconomy-api.version')
-
 dependencies {
     // Compile against Spigot
     compileOnly 'org.spigotmc:spigot-api:1.21.11-R0.1-SNAPSHOT'
@@ -18,19 +16,19 @@ dependencies {
 }
 
 // Define variables for cleaner URL construction
-def gitOwner = project.property('git-org.name')
-def gitRepo = project.property('git-org.repository')
-def gitUrl = project.property('mceconomy-api-artifact.url')
+def gitOwner = project.property('git-org-name')
+def gitRepo = project.property('git-org-repository')
+def gitUrl = project.property('mceconomy-api-artifact-url')
 
 publishing {
     publications {
         create('mavenJava', MavenPublication) {
-            artifactId = project.property('mceconomy-api-artifact.id')
+            artifactId = project.property('mceconomy-api-artifact-id')
             artifact shadowJar
 
             pom {
-                name = project.property('mceconomy-api.name')
-                description = project.property('mceconomy-api-artifact.description')
+                name = project.property('mceconomy-api-name')
+                description = project.property('mceconomy-api-artifact-description')
                 url = gitUrl
 
                 developers {

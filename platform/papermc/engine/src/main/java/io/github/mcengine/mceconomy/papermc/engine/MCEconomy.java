@@ -1,6 +1,7 @@
 package io.github.mcengine.mceconomy.papermc.engine;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
+import io.github.mcengine.mcextension.common.MCExtensionManager;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import io.github.mcengine.mceconomy.common.command.util.*;
@@ -38,6 +39,11 @@ public class MCEconomy extends JavaPlugin {
     private MCEconomyListenerManager listenerManager;
 
     /**
+     * The manager handling loading and lifecycle of MCExtensions.
+     */
+    private MCExtensionManager extensionManager;
+
+    /**
      * Called when the plugin is enabled.
      * Initializes configuration, core components, services, and registers handlers.
      */
@@ -53,6 +59,9 @@ public class MCEconomy extends JavaPlugin {
         // Managers must be initialized before the provider now
         this.commandManager = new MCEconomyCommandManager();
         this.listenerManager = new MCEconomyListenerManager(this);
+        
+        // Initialize Extension Manager
+        this.extensionManager = new MCExtensionManager(this, asyncExecutor);
 
         // Inject everything into the Provider
         this.provider = new MCEconomyProvider(db, asyncExecutor, commandManager, listenerManager);
@@ -63,6 +72,7 @@ public class MCEconomy extends JavaPlugin {
         // or rely solely on MCEconomyProvider. For safety, we keep them registered.
         Bukkit.getServicesManager().register(MCEconomyCommandManager.class, commandManager, this, ServicePriority.Normal);
         Bukkit.getServicesManager().register(MCEconomyListenerManager.class, listenerManager, this, ServicePriority.Normal);
+        Bukkit.getServicesManager().register(MCExtensionManager.class, extensionManager, this, ServicePriority.Normal);
 
         // 4. Setup Commands and Listeners
         registerSubcommands();
@@ -72,6 +82,9 @@ public class MCEconomy extends JavaPlugin {
             economyCommand.setTabCompleter(new MCEconomyTabCompleter(commandManager));
         }
         registerListeners();
+
+        // 5. Load Extensions
+        extensionManager.loadAllExtensions();
 
         getLogger().info("MCEconomy Engine has been enabled!");
     }
@@ -103,10 +116,15 @@ public class MCEconomy extends JavaPlugin {
 
     /**
      * Called when the plugin is disabled.
-     * Ensures database connections are closed properly.
+     * Ensures database connections and extensions are closed properly.
      */
     @Override
     public void onDisable() {
+        // Shutdown extensions first to allow them to use the database before it closes
+        if (extensionManager != null) {
+            extensionManager.disableAllExtensions();
+        }
+
         // Shutdown database connections
         if (provider != null) {
             provider.shutdown();
@@ -139,5 +157,13 @@ public class MCEconomy extends JavaPlugin {
      */
     public MCEconomyProvider getProvider() {
         return this.provider;
+    }
+
+    /**
+     * Gets the active extension manager.
+     * @return The MCExtensionManager instance.
+     */
+    public MCExtensionManager getExtensionManager() {
+        return this.extensionManager;
     }
 }

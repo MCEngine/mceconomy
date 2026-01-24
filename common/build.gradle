@@ -7,8 +7,6 @@ plugins {
     id 'maven-publish'
 }
 
-version = project.property('mceconomy-common.version')
-
 dependencies {
     api project(':api')
 
@@ -22,19 +20,19 @@ dependencies {
 }
 
 // Define variables for cleaner URL construction
-def gitOwner = project.property('git-org.name')
-def gitRepo = project.property('git-org.repository')
-def gitUrl = project.property('mceconomy-common-artifact.url')
+def gitOwner = project.property('git-org-name')
+def gitRepo = project.property('git-org-repository')
+def gitUrl = project.property('mceconomy-common-artifact-url')
 
 publishing {
     publications {
         create('mavenJava', MavenPublication) {
-            artifactId = project.property('mceconomy-common-artifact.id')
+            artifactId = project.property('mceconomy-common-artifact-id')
             artifact shadowJar
 
             pom {
-                name = project.property('mceconomy-common.name')
-                description = project.property('mceconomy-common-artifact.description')
+                name = project.property('mceconomy-common-name')
+                description = project.property('mceconomy-common-artifact-description')
                 url = gitUrl
 
                 developers {
