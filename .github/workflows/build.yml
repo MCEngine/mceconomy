@@ -80,15 +80,32 @@ jobs:
       # 6. Auto Create Tag
       # Only triggers after a successful Release publish on master
       - name: Create Git Tag
+        id: create_tag
         if: ${{ steps.publish_release.outcome == 'success' }}
         run: |
           TAG_NAME="v${{ steps.check_iteration.outputs.version }}-${{ steps.check_iteration.outputs.iteration }}"
           git tag $TAG_NAME
           git push origin $TAG_NAME
+          echo "tag_name=$TAG_NAME" >> $GITHUB_OUTPUT
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      # 7. Save the JARs
+      # 7. Create GitHub Release and Upload Artifacts
+      - name: Create Release
+        if: ${{ steps.create_tag.outcome == 'success' }}
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.check_iteration.outputs.version }}-${{ steps.check_iteration.outputs.iteration }}
+          name: Release ${{ steps.check_iteration.outputs.version }}-${{ steps.check_iteration.outputs.iteration }}
+          draft: false
+          prerelease: false
+          files: |
+            **/build/libs/*.jar
+            !**/build/libs/*-plain.jar
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # 8. Save the JARs
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:
