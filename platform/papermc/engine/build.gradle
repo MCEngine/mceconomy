@@ -13,7 +13,7 @@ dependencies {
     api project(':api')
     api project(':common')
     // Adds MCExtension as a compile-time only dependency
-    compileOnly 'io.github.mcengine:mcextension:2026.0.2-5-18-DEV'
+    implementation 'io.github.mcengine:mcextension:2026.0.2-5-18-DEV'
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
 }
 
