@@ -1,6 +1,7 @@
 package io.github.mcengine.mceconomy.common;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
+import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import io.github.mcengine.mceconomy.common.listener.MCEconomyListenerManager;
 
@@ -46,7 +47,7 @@ public class MCEconomyProvider {
     /**
      * The default currency identifier used when no specific coin type is provided.
      */
-    private static final String DEFAULT_COIN = "coin";
+    private static final CurrencyType DEFAULT_COIN = CurrencyType.COIN;
 
     /**
      * Initializes the provider with a database implementation and an async executor.
@@ -120,10 +121,10 @@ public class MCEconomyProvider {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The type of currency (e.g., "gold", "silver").
+     * @param coinType    The type of currency.
      * @return A Future that completes with the current balance.
      */
-    public CompletableFuture<Integer> getCoin(String accountUuid, String accountType, String coinType) {
+    public CompletableFuture<Integer> getCoin(String accountUuid, String accountType, CurrencyType coinType) {
         return runAsync(() -> db.getCoin(accountUuid, accountType, coinType));
     }
 
@@ -150,7 +151,7 @@ public class MCEconomyProvider {
      * @param amount      The new amount to set.
      * @return A Future that completes with true if successful.
      */
-    public CompletableFuture<Boolean> setCoin(String accountUuid, String accountType, String coinType, int amount) {
+    public CompletableFuture<Boolean> setCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         return runAsync(() -> db.setCoin(accountUuid, accountType, coinType, amount));
     }
 
@@ -177,7 +178,7 @@ public class MCEconomyProvider {
      * @param amount      Amount to add.
      * @return A Future that completes with true if successful.
      */
-    public CompletableFuture<Boolean> addCoin(String accountUuid, String accountType, String coinType, int amount) {
+    public CompletableFuture<Boolean> addCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         return runAsync(() -> db.addCoin(accountUuid, accountType, coinType, amount));
     }
 
@@ -204,7 +205,7 @@ public class MCEconomyProvider {
      * @param amount      Amount to subtract.
      * @return A Future that completes with true if successful, false if insufficient funds.
      */
-    public CompletableFuture<Boolean> minusCoin(String accountUuid, String accountType, String coinType, int amount) {
+    public CompletableFuture<Boolean> minusCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         return runAsync(() -> db.minusCoin(accountUuid, accountType, coinType, amount));
     }
 
@@ -213,11 +214,11 @@ public class MCEconomyProvider {
     /**
      * Sends default 'coin' currency from one account to another asynchronously.
      *
-     * @param senderUuid   Sender account UUID.
-     * @param senderType   Sender account type.
+     * @param senderUuid  Sender account UUID.
+     * @param senderType  Sender account type.
      * @param receiverUuid Receiver account UUID.
      * @param receiverType Receiver account type.
-     * @param amount       Amount to transfer.
+     * @param amount      Amount to transfer.
      * @return A Future that completes with true if successful.
      */
     public CompletableFuture<Boolean> sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, int amount) {
@@ -227,15 +228,15 @@ public class MCEconomyProvider {
     /**
      * Sends a specific coin type from one account to another asynchronously.
      *
-     * @param senderUuid   Sender account UUID.
-     * @param senderType   Sender account type.
+     * @param senderUuid  Sender account UUID.
+     * @param senderType  Sender account type.
      * @param receiverUuid Receiver account UUID.
      * @param receiverType Receiver account type.
-     * @param coinType     The type of currency.
-     * @param amount       Amount to transfer.
+     * @param coinType    The type of currency.
+     * @param amount      Amount to transfer.
      * @return A Future that completes with true if successful, false if sender has insufficient funds.
      */
-    public CompletableFuture<Boolean> sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, String coinType, int amount) {
+    public CompletableFuture<Boolean> sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, CurrencyType coinType, int amount) {
         return runAsync(() -> db.sendCoin(senderUuid, senderType, receiverUuid, receiverType, coinType, amount));
     }
 

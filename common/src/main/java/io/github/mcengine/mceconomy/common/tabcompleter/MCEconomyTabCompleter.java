@@ -1,6 +1,7 @@
 package io.github.mcengine.mceconomy.common.tabcompleter;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
+import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
@@ -30,7 +31,7 @@ public class MCEconomyTabCompleter implements TabCompleter {
     /**
      * The list of valid coin types available for tab completion suggestions.
      */
-    private final List<String> coinTypes = Arrays.asList("coin", "copper", "silver", "gold");
+    private final List<String> coinTypes;
 
     /**
      * Constructs a new MCEconomyTabCompleter.
@@ -38,6 +39,10 @@ public class MCEconomyTabCompleter implements TabCompleter {
      */
     public MCEconomyTabCompleter(MCEconomyCommandManager manager) {
         this.manager = manager;
+        // Dynamically load values from the Enum
+        this.coinTypes = Arrays.stream(CurrencyType.values())
+                               .map(CurrencyType::getName)
+                               .collect(Collectors.toList());
     }
 
     /**
