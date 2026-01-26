@@ -1,6 +1,7 @@
 package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
+import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
@@ -47,7 +48,12 @@ public class HandleGet implements IEconomyCommandHandle {
             return;
         }
 
-        String coinType = args[0].toLowerCase();
+        CurrencyType coinType = CurrencyType.fromName(args[0]);
+        if (coinType == null) {
+            MCEconomyCommandManager.send(sender, Component.text("Invalid coin type.", NamedTextColor.RED));
+            return;
+        }
+
         OfflinePlayer target;
 
         // Case 1: Checking own balance
@@ -85,12 +91,12 @@ public class HandleGet implements IEconomyCommandHandle {
             // Message variation depending on if checking self or other
             if (sender instanceof Player && ((Player) sender).getUniqueId().equals(target.getUniqueId())) {
                 MCEconomyCommandManager.send(sender, Component.text()
-                    .append(Component.text("Your " + coinType + " balance: ", NamedTextColor.GREEN))
+                    .append(Component.text("Your " + coinType.getName() + " balance: ", NamedTextColor.GREEN))
                     .append(Component.text(balance, NamedTextColor.WHITE))
                     .build());
             } else {
                 MCEconomyCommandManager.send(sender, Component.text()
-                    .append(Component.text(targetName + "'s " + coinType + " balance: ", NamedTextColor.GREEN))
+                    .append(Component.text(targetName + "'s " + coinType.getName() + " balance: ", NamedTextColor.GREEN))
                     .append(Component.text(balance, NamedTextColor.WHITE))
                     .build());
             }

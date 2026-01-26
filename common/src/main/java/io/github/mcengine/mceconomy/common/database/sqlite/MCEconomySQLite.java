@@ -1,6 +1,7 @@
 package io.github.mcengine.mceconomy.common.database.sqlite;
 
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
+import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import org.bukkit.plugin.Plugin;
 import java.io.File;
 import java.sql.*;
@@ -61,21 +62,6 @@ public class MCEconomySQLite implements IMCEconomyDB {
     }
 
     /**
-     * Validates if the provided coin type is a valid column name.
-     * Use this to prevent SQL Injection attacks via column name manipulation.
-     *
-     * @param coinType The coin type string to check.
-     * @return true if valid, false otherwise.
-     */
-    private boolean isValidCoinType(String coinType) {
-        if (coinType == null) return false;
-        return coinType.equalsIgnoreCase("coin") ||
-               coinType.equalsIgnoreCase("copper") ||
-               coinType.equalsIgnoreCase("silver") ||
-               coinType.equalsIgnoreCase("gold");
-    }
-
-    /**
      * Inserts an account into the database if it does not already exist.
      * Uses INSERT OR IGNORE for SQLite compatibility.
      *
@@ -104,16 +90,14 @@ public class MCEconomySQLite implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name (coin, copper, silver, gold).
+     * @param coinType    The currency type.
      * @return The amount found in the database, or 0 if an error occurs.
      */
     @Override
-    public int getCoin(String accountUuid, String accountType, String coinType) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-
+    public int getCoin(String accountUuid, String accountType, CurrencyType coinType) {
         synchronized (lock) {
             ensureAccountExist(accountUuid, accountType);
-            String sql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
+            String sql = "SELECT " + coinType.getName() + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, accountUuid);
                 pstmt.setString(2, accountType);
@@ -131,17 +115,15 @@ public class MCEconomySQLite implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name.
+     * @param coinType    The currency type.
      * @param amount      The new value to set.
      * @return true if the update was successful, false on error.
      */
     @Override
-    public boolean setCoin(String accountUuid, String accountType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-
+    public boolean setCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         synchronized (lock) {
             ensureAccountExist(accountUuid, accountType);
-            String sql = "UPDATE economy_accounts SET " + coinType + " = ? WHERE account_uuid = ? AND account_type = ?";
+            String sql = "UPDATE economy_accounts SET " + coinType.getName() + " = ? WHERE account_uuid = ? AND account_type = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, amount);
                 pstmt.setString(2, accountUuid);
@@ -160,13 +142,12 @@ public class MCEconomySQLite implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name.
+     * @param coinType    The currency type.
      * @param amount      The amount to add.
      * @return true if successful, false on error.
      */
     @Override
-    public boolean addCoin(String accountUuid, String accountType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
+    public boolean addCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         synchronized (lock) {
             return setCoin(accountUuid, accountType, coinType, getCoin(accountUuid, accountType, coinType) + amount);
         }
@@ -178,13 +159,12 @@ public class MCEconomySQLite implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name.
+     * @param coinType    The currency type.
      * @param amount      The amount to subtract.
      * @return true if transaction succeeded, false if insufficient funds or error.
      */
     @Override
-    public boolean minusCoin(String accountUuid, String accountType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
+    public boolean minusCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         synchronized (lock) {
             int currentBalance = getCoin(accountUuid, accountType, coinType);
             if (currentBalance >= amount) {
@@ -201,13 +181,12 @@ public class MCEconomySQLite implements IMCEconomyDB {
      * @param senderType   The account type of the sender.
      * @param receiverUuid The UUID of the receiver.
      * @param receiverType The account type of the receiver.
-     * @param coinType     The column name.
+     * @param coinType     The currency type.
      * @param amount       The amount to transfer.
      * @return true if transfer succeeded, false if sender has insufficient funds.
      */
     @Override
-    public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
+    public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, CurrencyType coinType, int amount) {
         synchronized (lock) {
             int senderBalance = getCoin(senderUuid, senderType, coinType);
             if (senderBalance >= amount) {

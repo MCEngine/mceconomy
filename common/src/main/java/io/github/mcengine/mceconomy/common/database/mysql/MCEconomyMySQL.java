@@ -3,6 +3,7 @@ package io.github.mcengine.mceconomy.common.database.mysql;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
+import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import org.bukkit.plugin.Plugin;
 import java.sql.*;
 
@@ -77,21 +78,6 @@ public class MCEconomyMySQL implements IMCEconomyDB {
     }
 
     /**
-     * Validates if the provided coin type is a valid column name.
-     * Use this to prevent SQL Injection attacks via column name manipulation.
-     *
-     * @param coinType The coin type string to check.
-     * @return true if valid, false otherwise.
-     */
-    private boolean isValidCoinType(String coinType) {
-        if (coinType == null) return false;
-        return coinType.equalsIgnoreCase("coin") ||
-               coinType.equalsIgnoreCase("copper") ||
-               coinType.equalsIgnoreCase("silver") ||
-               coinType.equalsIgnoreCase("gold");
-    }
-
-    /**
      * Inserts an account into the database if it does not already exist.
      * Uses INSERT IGNORE to handle existing primary keys gracefully.
      *
@@ -119,15 +105,14 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name (coin, copper, silver, gold).
+     * @param coinType    The currency type.
      * @return The amount found in the database, or 0 if an error occurs.
      */
     @Override
-    public int getCoin(String accountUuid, String accountType, String coinType) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-
+    public int getCoin(String accountUuid, String accountType, CurrencyType coinType) {
         ensureAccountExist(accountUuid, accountType);
-        String sql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
+        // Using enum getName() is safe here as it returns trusted string values
+        String sql = "SELECT " + coinType.getName() + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, accountUuid);
@@ -146,16 +131,14 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name.
+     * @param coinType    The currency type.
      * @param amount      The new value to set.
      * @return true if the update was successful, false on error.
      */
     @Override
-    public boolean setCoin(String accountUuid, String accountType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-
+    public boolean setCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         ensureAccountExist(accountUuid, accountType);
-        String sql = "UPDATE economy_accounts SET " + coinType + " = ? WHERE account_uuid = ? AND account_type = ?";
+        String sql = "UPDATE economy_accounts SET " + coinType.getName() + " = ? WHERE account_uuid = ? AND account_type = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, amount);
@@ -174,17 +157,16 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name.
+     * @param coinType    The currency type.
      * @param amount      The amount to add.
      * @return true if successful, false on error.
      */
     @Override
-    public boolean addCoin(String accountUuid, String accountType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        
+    public boolean addCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         // Optimized atomic update
         ensureAccountExist(accountUuid, accountType);
-        String sql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " + ? WHERE account_uuid = ? AND account_type = ?";
+        String col = coinType.getName();
+        String sql = "UPDATE economy_accounts SET " + col + " = " + col + " + ? WHERE account_uuid = ? AND account_type = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, amount);
@@ -204,18 +186,17 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      *
      * @param accountUuid The UUID of the account.
      * @param accountType The type of account.
-     * @param coinType    The column name.
+     * @param coinType    The currency type.
      * @param amount      The amount to subtract.
      * @return true if transaction succeeded, false if insufficient funds or error.
      */
     @Override
-    public boolean minusCoin(String accountUuid, String accountType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        
+    public boolean minusCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         int currentBalance = getCoin(accountUuid, accountType, coinType);
         if (currentBalance >= amount) {
             // Safe subtraction
-            String sql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " - ? WHERE account_uuid = ? AND account_type = ?";
+            String col = coinType.getName();
+            String sql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? WHERE account_uuid = ? AND account_type = ?";
             try (Connection conn = dataSource.getConnection();
                  PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, amount);
@@ -237,20 +218,20 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      * @param senderType   The account type of the sender.
      * @param receiverUuid The UUID of the receiver.
      * @param receiverType The account type of the receiver.
-     * @param coinType     The column name.
+     * @param coinType     The currency type.
      * @param amount       The amount to transfer.
      * @return true if transfer succeeded, false if sender has insufficient funds.
      */
     @Override
-    public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, String coinType, int amount) {
-        if (!isValidCoinType(coinType)) throw new IllegalArgumentException("Invalid coin type: " + coinType);
-        
+    public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, CurrencyType coinType, int amount) {
         try (Connection conn = dataSource.getConnection()) {
             conn.setAutoCommit(false); // Start Transaction
 
+            String col = coinType.getName();
+
             // 1. Check Balance
             int balance = 0;
-            String checkSql = "SELECT " + coinType + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
+            String checkSql = "SELECT " + col + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
             try (PreparedStatement check = conn.prepareStatement(checkSql)) {
                 check.setString(1, senderUuid);
                 check.setString(2, senderType);
@@ -265,7 +246,7 @@ public class MCEconomyMySQL implements IMCEconomyDB {
             }
 
             // 2. Withdraw
-            String withdrawSql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " - ? WHERE account_uuid = ? AND account_type = ?";
+            String withdrawSql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? WHERE account_uuid = ? AND account_type = ?";
             try (PreparedStatement withdraw = conn.prepareStatement(withdrawSql)) {
                 withdraw.setInt(1, amount);
                 withdraw.setString(2, senderUuid);
@@ -274,7 +255,7 @@ public class MCEconomyMySQL implements IMCEconomyDB {
             }
 
             // 3. Deposit (ensureAccountExist logic should ideally be pre-checked, but assuming simplified flow)
-            String depositSql = "UPDATE economy_accounts SET " + coinType + " = " + coinType + " + ? WHERE account_uuid = ? AND account_type = ?";
+            String depositSql = "UPDATE economy_accounts SET " + col + " = " + col + " + ? WHERE account_uuid = ? AND account_type = ?";
             try (PreparedStatement deposit = conn.prepareStatement(depositSql)) {
                 deposit.setInt(1, amount);
                 deposit.setString(2, receiverUuid);

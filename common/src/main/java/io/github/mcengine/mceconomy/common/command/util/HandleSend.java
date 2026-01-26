@@ -1,6 +1,7 @@
 package io.github.mcengine.mceconomy.common.command.util;
 
 import io.github.mcengine.mceconomy.api.command.IEconomyCommandHandle;
+import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import io.github.mcengine.mceconomy.common.MCEconomyProvider;
 import io.github.mcengine.mceconomy.common.command.MCEconomyCommandManager;
 import net.kyori.adventure.text.Component;
@@ -48,7 +49,12 @@ public class HandleSend implements IEconomyCommandHandle {
 
         Player player = (Player) sender;
         String targetName = args[0];
-        String coinType = args[1].toLowerCase();
+        CurrencyType coinType = CurrencyType.fromName(args[1]);
+        if (coinType == null) {
+            MCEconomyCommandManager.send(sender, Component.text("Invalid coin type.", NamedTextColor.RED));
+            return;
+        }
+
         int amount;
 
         try { 
@@ -76,7 +82,7 @@ public class HandleSend implements IEconomyCommandHandle {
                 if (success) {
                     MCEconomyCommandManager.send(player, Component.text()
                         .append(Component.text("Sent ", NamedTextColor.GREEN))
-                        .append(Component.text(amount + " " + coinType, NamedTextColor.WHITE))
+                        .append(Component.text(amount + " " + coinType.getName(), NamedTextColor.WHITE))
                         .append(Component.text(" to ", NamedTextColor.GREEN))
                         .append(Component.text(targetName, NamedTextColor.WHITE))
                         .append(Component.text(".", NamedTextColor.GREEN))
