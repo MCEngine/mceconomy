@@ -9,7 +9,6 @@ import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.command.CommandSender;
-import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 
 /**
@@ -95,8 +94,8 @@ public class HandleSend implements IEconomyCommandHandle {
      * @return The help description for the send command.
      */
     @Override
-    public String getHelp() {
-        return "<player> <coin type> <amount> - Send money to another player";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.send");
     }
 
     /**

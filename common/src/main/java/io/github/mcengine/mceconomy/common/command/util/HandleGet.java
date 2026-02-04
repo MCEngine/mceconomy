@@ -110,8 +110,8 @@ public class HandleGet implements IEconomyCommandHandle {
      * @return The help description for the get command.
      */
     @Override
-    public String getHelp() {
-        return "<coin type> - View your balance";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.get");
     }
 
     /**

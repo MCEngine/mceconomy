@@ -92,8 +92,8 @@ public class HandleMinus implements IEconomyCommandHandle {
      * @return The help description for the minus command.
      */
     @Override
-    public String getHelp() {
-        return "<player> <coin type> <amount> - Admin Remove money";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.minus");
     }
 
     /**

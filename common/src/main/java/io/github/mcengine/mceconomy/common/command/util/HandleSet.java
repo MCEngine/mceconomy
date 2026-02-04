@@ -92,8 +92,8 @@ public class HandleSet implements IEconomyCommandHandle {
      * @return The help description for the set command.
      */
     @Override
-    public String getHelp() {
-        return "<player> <coin type> <amount> - Admin Set balance";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.set");
     }
 
     /**

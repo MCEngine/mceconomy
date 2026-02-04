@@ -53,7 +53,7 @@ public class HandleHelp implements IEconomyCommandHandle {
                         .clickEvent(ClickEvent.suggestCommand(fullCommand + " "))
                         // Show a tooltip when hovering
                         .hoverEvent(HoverEvent.showText(Component.translatable("msg.help.hover").color(NamedTextColor.GREEN))))
-                    .append(Component.text(handle.getHelp(), NamedTextColor.GRAY))
+                    .append(handle.getHelp().color(NamedTextColor.GRAY))
                     .build());
             }
         }
@@ -63,7 +63,7 @@ public class HandleHelp implements IEconomyCommandHandle {
      * @return The help description for the help command.
      */
     @Override
-    public String getHelp() { return "- View this help menu"; }
+    public Component getHelp() { return Component.translatable("mceconomy.msg.help.help"); }
 
     /**
      * @return null as help is available to all players.

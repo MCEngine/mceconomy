@@ -154,8 +154,8 @@ public class HandleCovert implements IEconomyCommandHandle {
      * @return The help string.
      */
     @Override
-    public String getHelp() {
-        return "<coin type> <amount> - Convert currency to item";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.covert");
     }
 
     /**

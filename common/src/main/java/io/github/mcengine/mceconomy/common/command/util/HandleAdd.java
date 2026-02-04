@@ -92,8 +92,8 @@ public class HandleAdd implements IEconomyCommandHandle {
      * @return The help description for the add command.
      */
     @Override
-    public String getHelp() {
-        return "<player> <coin type> <amount> - Admin Add coins";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.add");
     }
 
     /**
