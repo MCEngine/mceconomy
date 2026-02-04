@@ -10,10 +10,12 @@ import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 
 import java.util.UUID;
@@ -65,11 +67,6 @@ public class HandleCovert implements IEconomyCommandHandle {
 
         Player player = (Player) sender;
 
-        if (!player.hasPermission("mceconomy.covert.coin")) {
-            MCEconomyCommandManager.send(sender, Component.text("No permission.", NamedTextColor.RED));
-            return;
-        }
-
         if (args.length < 2) {
             MCEconomyCommandManager.send(sender, Component.text("Usage: /economy covert <coin type> <amount>", NamedTextColor.RED));
             return;
@@ -108,6 +105,15 @@ public class HandleCovert implements IEconomyCommandHandle {
                         PlayerProfile profile = Bukkit.createProfile(UUID.randomUUID(), null);
                         profile.setProperty(new ProfileProperty("textures", texture));
                         meta.setPlayerProfile(profile);
+                        
+                        // Store coin data in PersistentDataContainer
+                        NamespacedKey keyType = new NamespacedKey(plugin, "coin_type");
+                        NamespacedKey keyAmount = new NamespacedKey(plugin, "coin_amount");
+                        
+                        meta.getPersistentDataContainer().set(keyType, PersistentDataType.STRING, coinType.getName());
+                        // Each item in the stack is worth 1 unit
+                        meta.getPersistentDataContainer().set(keyAmount, PersistentDataType.INTEGER, 1);
+
                         meta.displayName(Component.text(coinType.getName() + " Coin", NamedTextColor.GOLD));
                         item.setItemMeta(meta);
                     }
@@ -142,7 +148,7 @@ public class HandleCovert implements IEconomyCommandHandle {
     }
 
     /**
-     * @return null as this command is available to all players by default (for self).
+     * @return null as send is available to all players.
      */
     @Override
     public String getPermission() {
