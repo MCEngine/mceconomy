@@ -8,7 +8,7 @@ import io.github.mcengine.mceconomy.common.command.util.*;
 import io.github.mcengine.mceconomy.common.database.mysql.MCEconomyMySQL;
 import io.github.mcengine.mceconomy.common.database.sqlite.MCEconomySQLite;
 import io.github.mcengine.mceconomy.common.listener.MCEconomyListenerManager;
-import io.github.mcengine.mceconomy.common.listener.util.HandleEnsurePlayerExist;
+import io.github.mcengine.mceconomy.common.listener.util.*;
 import io.github.mcengine.mceconomy.common.tabcompleter.MCEconomyTabCompleter;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
@@ -150,6 +150,7 @@ public class MCEconomy extends JavaPlugin {
      */
     private void registerListeners() {
         listenerManager.register(new HandleEnsurePlayerExist(provider));
+        listenerManager.register(new HandleCoinItem(this, provider));
     }
 
     /**
