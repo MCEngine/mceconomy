@@ -88,6 +88,13 @@ public class MCEconomyTabCompleter implements TabCompleter {
                     }
                     break;
 
+                case "covert":
+                    // /economy covert <coin type> <amount>
+                    if (args.length == 2) {
+                        return filter(coinTypes, args[1]);
+                    }
+                    break;
+
                 case "add":
                 case "set":
                 case "minus":
