@@ -67,6 +67,11 @@ public class HandleCovert implements IEconomyCommandHandle {
 
         Player player = (Player) sender;
 
+        if (player.getInventory().firstEmpty() == -1) {
+            MCEconomyCommandManager.send(sender, Component.text("Inventory full. Please make space.", NamedTextColor.RED));
+            return;
+        }
+
         if (args.length < 2) {
             MCEconomyCommandManager.send(sender, Component.text("Usage: /economy covert <coin type> <amount>", NamedTextColor.RED));
             return;
@@ -98,7 +103,7 @@ public class HandleCovert implements IEconomyCommandHandle {
             if (success) {
                 // Switch to main thread for inventory operations
                 Bukkit.getScheduler().runTask(plugin, () -> {
-                    ItemStack item = new ItemStack(Material.PLAYER_HEAD, amount);
+                    ItemStack item = new ItemStack(Material.PLAYER_HEAD, 1);
                     SkullMeta meta = (SkullMeta) item.getItemMeta();
 
                     if (meta != null) {
@@ -111,16 +116,17 @@ public class HandleCovert implements IEconomyCommandHandle {
                         NamespacedKey keyAmount = new NamespacedKey(plugin, "coin_amount");
                         
                         meta.getPersistentDataContainer().set(keyType, PersistentDataType.STRING, coinType.getName());
-                        // Each item in the stack is worth 1 unit
-                        meta.getPersistentDataContainer().set(keyAmount, PersistentDataType.INTEGER, 1);
+                        // Store the full amount in the item's data, rather than item count
+                        meta.getPersistentDataContainer().set(keyAmount, PersistentDataType.INTEGER, amount);
 
                         meta.displayName(Component.text(coinType.getName() + " Coin", NamedTextColor.GOLD));
                         item.setItemMeta(meta);
                     }
 
+                    // Secondary check in case inventory filled up during database transaction
                     if (player.getInventory().firstEmpty() == -1) {
                         player.getWorld().dropItem(player.getLocation(), item);
-                        MCEconomyCommandManager.send(player, Component.text("Inventory full. Items dropped on ground.", NamedTextColor.YELLOW));
+                        MCEconomyCommandManager.send(player, Component.text("Inventory full. Item dropped on ground.", NamedTextColor.YELLOW));
                     } else {
                         player.getInventory().addItem(item);
                     }
@@ -128,7 +134,7 @@ public class HandleCovert implements IEconomyCommandHandle {
                     MCEconomyCommandManager.send(player, Component.text()
                         .append(Component.text("Converted ", NamedTextColor.GREEN))
                         .append(Component.text(amount + " " + coinType.getName(), NamedTextColor.WHITE))
-                        .append(Component.text(" to items.", NamedTextColor.GREEN))
+                        .append(Component.text(" to item.", NamedTextColor.GREEN))
                         .build());
                 });
             } else {
