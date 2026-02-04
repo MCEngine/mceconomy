@@ -56,6 +56,12 @@ public class MCEconomyCommandManager implements CommandExecutor {
         IEconomyCommandHandle handle = subcommands.get(subName);
 
         if (handle != null) {
+            String permission = handle.getPermission();
+            if (permission != null && !sender.hasPermission(permission)) {
+                send(sender, Component.text("No permission.", NamedTextColor.RED));
+                return true;
+            }
+
             // Clip the array: remove the subcommand name
             String[] subArgs = (args.length <= 1) ? new String[0] : Arrays.copyOfRange(args, 1, args.length);
             handle.invoke(sender, subArgs);
