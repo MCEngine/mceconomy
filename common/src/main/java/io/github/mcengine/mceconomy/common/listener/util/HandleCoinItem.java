@@ -62,7 +62,7 @@ public class HandleCoinItem implements Listener {
 
         CurrencyType currency = CurrencyType.fromName(typeName);
         if (currency == null) {
-            event.getPlayer().sendMessage(Component.text("Invalid currency data on item.", NamedTextColor.RED));
+            event.getPlayer().sendMessage(Component.translatable("mceconomy.msg.error.item.data").color(NamedTextColor.RED));
             return;
         }
 
@@ -72,12 +72,14 @@ public class HandleCoinItem implements Listener {
         // Add money to player
         provider.addCoin(event.getPlayer().getUniqueId().toString(), "PLAYER", currency, value).thenAccept(success -> {
             if (success) {
-                event.getPlayer().sendMessage(Component.text()
-                        .append(Component.text("Redeemed ", NamedTextColor.GREEN))
-                        .append(Component.text(value + " " + currency.getName(), NamedTextColor.WHITE))
-                        .build());
+                event.getPlayer().sendMessage(Component.translatable("mceconomy.msg.success.redeem")
+                    .args(
+                        Component.text(value),
+                        Component.text(currency.getName())
+                    )
+                    .color(NamedTextColor.GREEN));
             } else {
-                event.getPlayer().sendMessage(Component.text("Error occurred while redeeming coin.", NamedTextColor.RED));
+                event.getPlayer().sendMessage(Component.translatable("mceconomy.msg.error.redeem").color(NamedTextColor.RED));
             }
         });
     }

@@ -38,18 +38,18 @@ public class HandleAdd implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mceconomy.add.coin")) {
-            MCEconomyCommandManager.send(sender, Component.text("No permission.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("msg.permission.denied").color(NamedTextColor.RED));
             return;
         }
         if (args.length < 3) {
-            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy add <player> <coin type> <amount>", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.add").color(NamedTextColor.RED));
             return;
         }
 
         String targetName = args[0];
         CurrencyType coinType = CurrencyType.fromName(args[1]);
         if (coinType == null) {
-            MCEconomyCommandManager.send(sender, Component.text("Invalid coin type.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
             return;
         }
 
@@ -58,7 +58,7 @@ public class HandleAdd implements IEconomyCommandHandle {
         try { 
             amount = Integer.parseInt(args[2]); 
         } catch (NumberFormatException e) {
-            MCEconomyCommandManager.send(sender, Component.text("Amount must be a number.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.amount").color(NamedTextColor.RED));
             return;
         }
 
@@ -66,26 +66,24 @@ public class HandleAdd implements IEconomyCommandHandle {
         
         // Validation check before attempting DB transaction
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            MCEconomyCommandManager.send(sender, Component.text()
-                .append(Component.text("Player ", NamedTextColor.RED))
-                .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text(" not found.", NamedTextColor.RED))
-                .build());
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.player.not.found")
+                .args(Component.text(targetName))
+                .color(NamedTextColor.RED));
             return;
         }
 
         // Updated: Added "PLAYER" account type
         provider.addCoin(target.getUniqueId().toString(), "PLAYER", coinType, amount).thenAccept(success -> {
             if (success) {
-                MCEconomyCommandManager.send(sender, Component.text()
-                    .append(Component.text("Added ", NamedTextColor.GREEN))
-                    .append(Component.text(amount + " " + coinType.getName(), NamedTextColor.WHITE))
-                    .append(Component.text(" to ", NamedTextColor.GREEN))
-                    .append(Component.text(targetName, NamedTextColor.WHITE))
-                    .append(Component.text(".", NamedTextColor.GREEN))
-                    .build());
+                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.success.add")
+                    .args(
+                        Component.text(amount),
+                        Component.text(coinType.getName()),
+                        Component.text(targetName)
+                    )
+                    .color(NamedTextColor.GREEN));
             } else {
-                MCEconomyCommandManager.send(sender, Component.text("Failed to add coins. Check console for database errors.", NamedTextColor.RED));
+                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.error.generic").color(NamedTextColor.RED));
             }
         });
     }
