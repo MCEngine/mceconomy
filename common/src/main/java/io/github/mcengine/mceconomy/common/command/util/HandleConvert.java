@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * Command handler for converting currency into physical items with textures from config.
  */
-public class HandleCovert implements IEconomyCommandHandle {
+public class HandleConvert implements IEconomyCommandHandle {
 
     /**
      * The plugin instance used for scheduling tasks and accessing configuration.
@@ -36,12 +36,12 @@ public class HandleCovert implements IEconomyCommandHandle {
     private final MCEconomyProvider provider;
 
     /**
-     * Constructs a new HandleCovert command handler.
+     * Constructs a new HandleConvert command handler.
      *
      * @param plugin   The main plugin instance.
      * @param provider The MCEconomy provider instance.
      */
-    public HandleCovert(Plugin plugin, MCEconomyProvider provider) {
+    public HandleConvert(Plugin plugin, MCEconomyProvider provider) {
         this.plugin = plugin;
         this.provider = provider;
     }
@@ -73,7 +73,8 @@ public class HandleCovert implements IEconomyCommandHandle {
         }
 
         if (args.length < 2) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.covert").color(NamedTextColor.RED));
+            // Updated key from .covert to .convert
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.convert").color(NamedTextColor.RED));
             return;
         }
 
@@ -155,7 +156,8 @@ public class HandleCovert implements IEconomyCommandHandle {
      */
     @Override
     public Component getHelp() {
-        return Component.translatable("mceconomy.msg.help.covert");
+        // Updated key from .covert to .convert
+        return Component.translatable("mceconomy.msg.help.convert");
     }
 
     /**
