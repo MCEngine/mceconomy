@@ -142,7 +142,7 @@ public class MCEconomy extends JavaPlugin {
         commandManager.register("minus", new HandleMinus(this, provider));
         commandManager.register("set", new HandleSet(this, provider));
         commandManager.register("send", new HandleSend(this, provider));
-        commandManager.register("covert", new HandleCovert(this, provider));
+        commandManager.register("convert", new HandleConvert(this, provider));
     }
 
     /**
