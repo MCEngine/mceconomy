@@ -1,5 +1,6 @@
 package io.github.mcengine.mceconomy.api.command;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.command.CommandSender;
 
 /**
@@ -15,9 +16,9 @@ public interface IEconomyCommandHandle {
 
     /**
      * Retrieves the help description for the command.
-     * @return A string describing usage and purpose.
+     * @return A component describing usage and purpose.
      */
-    String getHelp();
+    Component getHelp();
 
     /**
      * Retrieves the permission node required to execute the command.

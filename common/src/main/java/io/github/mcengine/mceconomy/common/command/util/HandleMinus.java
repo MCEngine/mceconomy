@@ -38,18 +38,18 @@ public class HandleMinus implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mceconomy.minus.coin")) {
-            MCEconomyCommandManager.send(sender, Component.text("No permission.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("msg.permission.denied").color(NamedTextColor.RED));
             return;
         }
         if (args.length < 3) {
-            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy minus <player> <coin type> <amount>", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.minus").color(NamedTextColor.RED));
             return;
         }
 
         String targetName = args[0];
         CurrencyType coinType = CurrencyType.fromName(args[1]);
         if (coinType == null) {
-            MCEconomyCommandManager.send(sender, Component.text("Invalid coin type.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
             return;
         }
 
@@ -58,7 +58,7 @@ public class HandleMinus implements IEconomyCommandHandle {
         try { 
             amount = Integer.parseInt(args[2]); 
         } catch (NumberFormatException e) {
-            MCEconomyCommandManager.send(sender, Component.text("Amount must be a number.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.amount").color(NamedTextColor.RED));
             return;
         }
 
@@ -66,30 +66,24 @@ public class HandleMinus implements IEconomyCommandHandle {
         
         // Validation check before attempting DB transaction
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            MCEconomyCommandManager.send(sender, Component.text()
-                .append(Component.text("Player ", NamedTextColor.RED))
-                .append(Component.text(targetName, NamedTextColor.WHITE))
-                .append(Component.text(" not found.", NamedTextColor.RED))
-                .build());
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.player.not.found")
+                .args(Component.text(targetName))
+                .color(NamedTextColor.RED));
             return;
         }
 
         // Updated: Added "PLAYER" account type
         provider.minusCoin(target.getUniqueId().toString(), "PLAYER", coinType, amount).thenAccept(success -> {
             if (success) {
-                MCEconomyCommandManager.send(sender, Component.text()
-                    .append(Component.text("Removed ", NamedTextColor.GREEN))
-                    .append(Component.text(amount + " " + coinType.getName(), NamedTextColor.WHITE))
-                    .append(Component.text(" from ", NamedTextColor.GREEN))
-                    .append(Component.text(targetName, NamedTextColor.WHITE))
-                    .append(Component.text(".", NamedTextColor.GREEN))
-                    .build());
+                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.success.remove")
+                    .args(
+                        Component.text(amount),
+                        Component.text(coinType.getName()),
+                        Component.text(targetName)
+                    )
+                    .color(NamedTextColor.GREEN));
             } else {
-                MCEconomyCommandManager.send(sender, Component.text()
-                    .append(Component.text("Operation failed. ", NamedTextColor.RED))
-                    .append(Component.text(targetName, NamedTextColor.WHITE))
-                    .append(Component.text(" has insufficient funds.", NamedTextColor.RED))
-                    .build());
+                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.insufficient.funds").color(NamedTextColor.RED));
             }
         });
     }
@@ -98,8 +92,8 @@ public class HandleMinus implements IEconomyCommandHandle {
      * @return The help description for the minus command.
      */
     @Override
-    public String getHelp() {
-        return "<player> <coin type> <amount> - Admin Remove money";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.minus");
     }
 
     /**

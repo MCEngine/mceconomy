@@ -61,25 +61,25 @@ public class HandleCovert implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            MCEconomyCommandManager.send(sender, Component.text("Only players can use this command.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("msg.only_players").color(NamedTextColor.RED));
             return;
         }
 
         Player player = (Player) sender;
 
         if (player.getInventory().firstEmpty() == -1) {
-            MCEconomyCommandManager.send(sender, Component.text("Inventory full. Please make space.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.inventory.full").color(NamedTextColor.RED));
             return;
         }
 
         if (args.length < 2) {
-            MCEconomyCommandManager.send(sender, Component.text("Usage: /economy covert <coin type> <amount>", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.covert").color(NamedTextColor.RED));
             return;
         }
 
         CurrencyType coinType = CurrencyType.fromName(args[0]);
         if (coinType == null) {
-            MCEconomyCommandManager.send(sender, Component.text("Invalid coin type.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
             return;
         }
 
@@ -88,13 +88,15 @@ public class HandleCovert implements IEconomyCommandHandle {
             amount = Integer.parseInt(args[1]);
             if (amount <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            MCEconomyCommandManager.send(sender, Component.text("Amount must be a positive number.", NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.amount").color(NamedTextColor.RED));
             return;
         }
 
         String texture = plugin.getConfig().getString(coinType.getName().toLowerCase() + ".texture");
         if (texture == null) {
-            MCEconomyCommandManager.send(sender, Component.text("Texture not found for " + coinType.getName(), NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.error.texture")
+                .args(Component.text(coinType.getName()))
+                .color(NamedTextColor.RED));
             return;
         }
 
@@ -119,26 +121,29 @@ public class HandleCovert implements IEconomyCommandHandle {
                         // Store the full amount in the item's data, rather than item count
                         meta.getPersistentDataContainer().set(keyAmount, PersistentDataType.INTEGER, amount);
 
-                        meta.displayName(Component.text(coinType.getName() + " Coin", NamedTextColor.GOLD));
+                        meta.displayName(Component.translatable("mceconomy.item.coin.name")
+                            .args(Component.text(coinType.getName()))
+                            .color(NamedTextColor.GOLD));
                         item.setItemMeta(meta);
                     }
 
                     // Secondary check in case inventory filled up during database transaction
                     if (player.getInventory().firstEmpty() == -1) {
                         player.getWorld().dropItem(player.getLocation(), item);
-                        MCEconomyCommandManager.send(player, Component.text("Inventory full. Item dropped on ground.", NamedTextColor.YELLOW));
+                        MCEconomyCommandManager.send(player, Component.translatable("mceconomy.msg.inventory.full.drop").color(NamedTextColor.YELLOW));
                     } else {
                         player.getInventory().addItem(item);
                     }
 
-                    MCEconomyCommandManager.send(player, Component.text()
-                        .append(Component.text("Converted ", NamedTextColor.GREEN))
-                        .append(Component.text(amount + " " + coinType.getName(), NamedTextColor.WHITE))
-                        .append(Component.text(" to item.", NamedTextColor.GREEN))
-                        .build());
+                    MCEconomyCommandManager.send(player, Component.translatable("mceconomy.msg.success.convert")
+                        .args(
+                            Component.text(amount),
+                            Component.text(coinType.getName())
+                        )
+                        .color(NamedTextColor.GREEN));
                 });
             } else {
-                MCEconomyCommandManager.send(player, Component.text("Insufficient funds.", NamedTextColor.RED));
+                MCEconomyCommandManager.send(player, Component.translatable("mceconomy.msg.insufficient.funds").color(NamedTextColor.RED));
             }
         });
     }
@@ -149,8 +154,8 @@ public class HandleCovert implements IEconomyCommandHandle {
      * @return The help string.
      */
     @Override
-    public String getHelp() {
-        return "<coin type> <amount> - Convert currency to item";
+    public Component getHelp() {
+        return Component.translatable("mceconomy.msg.help.covert");
     }
 
     /**

@@ -36,7 +36,7 @@ public class HandleHelp implements IEconomyCommandHandle {
      */
     @Override
     public void invoke(CommandSender sender, String[] args) {
-        MCEconomyCommandManager.send(sender, Component.text("--- MCEconomy Help ---", NamedTextColor.GOLD, TextDecoration.BOLD));
+        MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.help.header").color(NamedTextColor.GOLD).decorate(TextDecoration.BOLD));
 
         for (Map.Entry<String, IEconomyCommandHandle> entry : manager.getSubcommands().entrySet()) {
             String name = entry.getKey();
@@ -52,8 +52,8 @@ public class HandleHelp implements IEconomyCommandHandle {
                         // Click to autofill the command in the chat bar
                         .clickEvent(ClickEvent.suggestCommand(fullCommand + " "))
                         // Show a tooltip when hovering
-                        .hoverEvent(HoverEvent.showText(Component.text("Click to autofill command", NamedTextColor.GREEN))))
-                    .append(Component.text(handle.getHelp(), NamedTextColor.GRAY))
+                        .hoverEvent(HoverEvent.showText(Component.translatable("msg.help.hover").color(NamedTextColor.GREEN))))
+                    .append(handle.getHelp().color(NamedTextColor.GRAY))
                     .build());
             }
         }
@@ -63,7 +63,7 @@ public class HandleHelp implements IEconomyCommandHandle {
      * @return The help description for the help command.
      */
     @Override
-    public String getHelp() { return "- View this help menu"; }
+    public Component getHelp() { return Component.translatable("mceconomy.msg.help.help"); }
 
     /**
      * @return null as help is available to all players.
