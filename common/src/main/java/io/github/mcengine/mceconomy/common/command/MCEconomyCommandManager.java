@@ -58,7 +58,7 @@ public class MCEconomyCommandManager implements CommandExecutor {
         if (handle != null) {
             String permission = handle.getPermission();
             if (permission != null && !sender.hasPermission(permission)) {
-                send(sender, Component.translatable("msg.permission.denied").color(NamedTextColor.RED));
+                send(sender, Component.translatable("mcengine.mceconomy.msg.permission.denied").color(NamedTextColor.RED));
                 return true;
             }
 
@@ -67,7 +67,7 @@ public class MCEconomyCommandManager implements CommandExecutor {
             handle.invoke(sender, subArgs);
         } else {
             // Args: %s -> subName
-            send(sender, Component.translatable("msg.command.unknown").args(Component.text(subName)).color(NamedTextColor.RED));
+            send(sender, Component.translatable("mcengine.mceconomy.msg.command.unknown").args(Component.text(subName)).color(NamedTextColor.RED));
         }
         return true;
     }

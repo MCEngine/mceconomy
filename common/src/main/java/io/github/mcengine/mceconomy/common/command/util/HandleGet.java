@@ -41,16 +41,16 @@ public class HandleGet implements IEconomyCommandHandle {
         // Minimum requirement: <coin type>
         if (args.length < 1) {
             if (sender.hasPermission("mceconomy.get.other")) {
-                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.get.other").color(NamedTextColor.RED));
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.usage.get.other").color(NamedTextColor.RED));
             } else {
-                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.get").color(NamedTextColor.RED));
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.usage.get").color(NamedTextColor.RED));
             }
             return;
         }
 
         CurrencyType coinType = CurrencyType.fromName(args[0]);
         if (coinType == null) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
             return;
         }
 
@@ -59,7 +59,7 @@ public class HandleGet implements IEconomyCommandHandle {
         // Case 1: Checking own balance
         if (args.length == 1) {
             if (!(sender instanceof Player)) {
-                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.console.must.specify.player").color(NamedTextColor.RED));
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.console.must.specify.player").color(NamedTextColor.RED));
                 return;
             }
             target = (Player) sender;
@@ -67,7 +67,7 @@ public class HandleGet implements IEconomyCommandHandle {
         // Case 2: Checking another player's balance (OP/Admin)
         else {
             if (!sender.hasPermission("mceconomy.get.other")) {
-                MCEconomyCommandManager.send(sender, Component.translatable("msg.permission.denied").color(NamedTextColor.RED));
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.permission.denied").color(NamedTextColor.RED));
                 return;
             }
             target = Bukkit.getOfflinePlayer(args[1]);
@@ -75,7 +75,7 @@ public class HandleGet implements IEconomyCommandHandle {
         
         // Validation check
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-             MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.player.not.found")
+             MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.player.not.found")
                 .args(Component.text(target.getName() != null ? target.getName() : args[1]))
                 .color(NamedTextColor.RED));
             return;
@@ -88,14 +88,14 @@ public class HandleGet implements IEconomyCommandHandle {
         provider.getCoin(target.getUniqueId().toString(), "PLAYER", coinType).thenAccept(balance -> {
             // Message variation depending on if checking self or other
             if (sender instanceof Player && ((Player) sender).getUniqueId().equals(target.getUniqueId())) {
-                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.balance.self")
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.balance.self")
                     .args(
                         Component.text(coinType.getName()),
                         Component.text(balance)
                     )
                     .color(NamedTextColor.GREEN));
             } else {
-                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.balance.other")
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.balance.other")
                     .args(
                         Component.text(targetName),
                         Component.text(coinType.getName()),
@@ -111,7 +111,7 @@ public class HandleGet implements IEconomyCommandHandle {
      */
     @Override
     public Component getHelp() {
-        return Component.translatable("mceconomy.msg.help.get");
+        return Component.translatable("mcengine.mceconomy.msg.help.get");
     }
 
     /**

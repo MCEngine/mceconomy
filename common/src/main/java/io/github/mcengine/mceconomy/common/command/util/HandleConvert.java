@@ -61,26 +61,26 @@ public class HandleConvert implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!(sender instanceof Player)) {
-            MCEconomyCommandManager.send(sender, Component.translatable("msg.only_players").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.only_players").color(NamedTextColor.RED));
             return;
         }
 
         Player player = (Player) sender;
 
         if (player.getInventory().firstEmpty() == -1) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.inventory.full").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.inventory.full").color(NamedTextColor.RED));
             return;
         }
 
         if (args.length < 2) {
             // Updated key from .covert to .convert
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.convert").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.usage.convert").color(NamedTextColor.RED));
             return;
         }
 
         CurrencyType coinType = CurrencyType.fromName(args[0]);
         if (coinType == null) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
             return;
         }
 
@@ -89,13 +89,13 @@ public class HandleConvert implements IEconomyCommandHandle {
             amount = Integer.parseInt(args[1]);
             if (amount <= 0) throw new NumberFormatException();
         } catch (NumberFormatException e) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.amount").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.invalid.amount").color(NamedTextColor.RED));
             return;
         }
 
         String texture = plugin.getConfig().getString(coinType.getName().toLowerCase() + ".texture");
         if (texture == null) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.error.texture")
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.error.texture")
                 .args(Component.text(coinType.getName()))
                 .color(NamedTextColor.RED));
             return;
@@ -122,7 +122,7 @@ public class HandleConvert implements IEconomyCommandHandle {
                         // Store the full amount in the item's data, rather than item count
                         meta.getPersistentDataContainer().set(keyAmount, PersistentDataType.INTEGER, amount);
 
-                        meta.displayName(Component.translatable("mceconomy.item.coin.name")
+                        meta.displayName(Component.translatable("mcengine.mceconomy.item.coin.name")
                             .args(Component.text(coinType.getName()))
                             .color(NamedTextColor.GOLD));
                         item.setItemMeta(meta);
@@ -131,12 +131,12 @@ public class HandleConvert implements IEconomyCommandHandle {
                     // Secondary check in case inventory filled up during database transaction
                     if (player.getInventory().firstEmpty() == -1) {
                         player.getWorld().dropItem(player.getLocation(), item);
-                        MCEconomyCommandManager.send(player, Component.translatable("mceconomy.msg.inventory.full.drop").color(NamedTextColor.YELLOW));
+                        MCEconomyCommandManager.send(player, Component.translatable("mcengine.mceconomy.msg.inventory.full.drop").color(NamedTextColor.YELLOW));
                     } else {
                         player.getInventory().addItem(item);
                     }
 
-                    MCEconomyCommandManager.send(player, Component.translatable("mceconomy.msg.success.convert")
+                    MCEconomyCommandManager.send(player, Component.translatable("mcengine.mceconomy.msg.success.convert")
                         .args(
                             Component.text(amount),
                             Component.text(coinType.getName())
@@ -144,7 +144,7 @@ public class HandleConvert implements IEconomyCommandHandle {
                         .color(NamedTextColor.GREEN));
                 });
             } else {
-                MCEconomyCommandManager.send(player, Component.translatable("mceconomy.msg.insufficient.funds").color(NamedTextColor.RED));
+                MCEconomyCommandManager.send(player, Component.translatable("mcengine.mceconomy.msg.insufficient.funds").color(NamedTextColor.RED));
             }
         });
     }
@@ -157,7 +157,7 @@ public class HandleConvert implements IEconomyCommandHandle {
     @Override
     public Component getHelp() {
         // Updated key from .covert to .convert
-        return Component.translatable("mceconomy.msg.help.convert");
+        return Component.translatable("mcengine.mceconomy.msg.help.convert");
     }
 
     /**

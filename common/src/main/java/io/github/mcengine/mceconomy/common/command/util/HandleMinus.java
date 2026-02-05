@@ -38,18 +38,18 @@ public class HandleMinus implements IEconomyCommandHandle {
     @Override
     public void invoke(CommandSender sender, String[] args) {
         if (!sender.hasPermission("mceconomy.minus.coin")) {
-            MCEconomyCommandManager.send(sender, Component.translatable("msg.permission.denied").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.permission.denied").color(NamedTextColor.RED));
             return;
         }
         if (args.length < 3) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.usage.minus").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.usage.minus").color(NamedTextColor.RED));
             return;
         }
 
         String targetName = args[0];
         CurrencyType coinType = CurrencyType.fromName(args[1]);
         if (coinType == null) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.invalid.coin").color(NamedTextColor.RED));
             return;
         }
 
@@ -58,7 +58,7 @@ public class HandleMinus implements IEconomyCommandHandle {
         try { 
             amount = Integer.parseInt(args[2]); 
         } catch (NumberFormatException e) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.invalid.amount").color(NamedTextColor.RED));
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.invalid.amount").color(NamedTextColor.RED));
             return;
         }
 
@@ -66,7 +66,7 @@ public class HandleMinus implements IEconomyCommandHandle {
         
         // Validation check before attempting DB transaction
         if (!target.hasPlayedBefore() && !target.isOnline()) {
-            MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.player.not.found")
+            MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.player.not.found")
                 .args(Component.text(targetName))
                 .color(NamedTextColor.RED));
             return;
@@ -75,7 +75,7 @@ public class HandleMinus implements IEconomyCommandHandle {
         // Updated: Added "PLAYER" account type
         provider.minusCoin(target.getUniqueId().toString(), "PLAYER", coinType, amount).thenAccept(success -> {
             if (success) {
-                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.success.remove")
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.success.remove")
                     .args(
                         Component.text(amount),
                         Component.text(coinType.getName()),
@@ -83,7 +83,7 @@ public class HandleMinus implements IEconomyCommandHandle {
                     )
                     .color(NamedTextColor.GREEN));
             } else {
-                MCEconomyCommandManager.send(sender, Component.translatable("mceconomy.msg.insufficient.funds").color(NamedTextColor.RED));
+                MCEconomyCommandManager.send(sender, Component.translatable("mcengine.mceconomy.msg.insufficient.funds").color(NamedTextColor.RED));
             }
         });
     }
@@ -93,7 +93,7 @@ public class HandleMinus implements IEconomyCommandHandle {
      */
     @Override
     public Component getHelp() {
-        return Component.translatable("mceconomy.msg.help.minus");
+        return Component.translatable("mcengine.mceconomy.msg.help.minus");
     }
 
     /**
