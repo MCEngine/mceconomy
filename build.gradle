@@ -92,6 +92,14 @@ subprojects {
 
         // 4. FORCE FILE NAME (The Ultimate Fix)
         archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
+
+        // 5. CUSTOM OUTPUT DIRECTORY (Engine Only)
+        if (project.path == ':platform:papermc:engine') {
+            String pluginBuildPath = System.getenv("MCPLUGIN_BUILD_PATH")
+            if (pluginBuildPath != null && !pluginBuildPath.isEmpty()) {
+                destinationDirectory.set(file(pluginBuildPath))
+            }
+        }
     }
 
     java {
