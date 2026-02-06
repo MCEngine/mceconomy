@@ -50,20 +50,17 @@ subprojects {
     String calculatedVersion = "unspecified"
     
     if (releaseTag != null && !releaseTag.isEmpty()) {
-        // RELEASE STRATEGY: Use tag directly, strip "v"
+        // RELEASE STRATEGY: yyyy.m.m (e.g., 2026.0.2)
         calculatedVersion = releaseTag.replace("v", "")
     } else if (project.hasProperty("${propName}-version")) {
         def baseVersion = project.property("${propName}-version")
-        def iteration = project.hasProperty('project-iteration') ? project.property('project-iteration') : "1"
+        def iteration = project.findProperty('project-iteration') ?: "1"
 
-        if (isDevBuild && !isDevReleaseBuild) {
-            // CI Dev Build: {Version}-{Iteration}-{BuildNum}-DEV
-            calculatedVersion = "${baseVersion}-${iteration}-${buildNum}-DEV"
-        } else if (isDevReleaseBuild) {
-            // CI Dev Release Build: {Version}-{Iteration}
+        if (isDevBuild || isDevReleaseBuild) {
+            // TEST VERSION: yyyy.m.m-{iteration} (e.g., 2026.0.2-4)
             calculatedVersion = "${baseVersion}-${iteration}"
         } else {
-            // Local Build: {Version}-{Iteration}-SNAPSHOT
+            // LOCAL BUILD: yyyy.m.m-{iteration}-SNAPSHOT
             calculatedVersion = "${baseVersion}-${iteration}-SNAPSHOT"
         }
     }
