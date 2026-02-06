@@ -122,8 +122,9 @@ public class HandleConvert implements IEconomyCommandHandle {
                         // Store the full amount in the item's data, rather than item count
                         meta.getPersistentDataContainer().set(keyAmount, PersistentDataType.INTEGER, amount);
 
+                        // Use translatable component with two arguments: Amount and Coin Name
                         meta.displayName(Component.translatable("mcengine.mceconomy.item.coin.name")
-                            .args(Component.text(coinType.getName()))
+                            .args(Component.text(amount), Component.text(coinType.getName()))
                             .color(NamedTextColor.GOLD));
                         item.setItemMeta(meta);
                     }
