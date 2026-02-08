@@ -1,19 +1,11 @@
 /**
  * MCEconomy Root Configuration
- * Central build logic for all MCEconomy modules.
  */
-plugins {
-    id 'com.gradleup.shadow' version '9.3.1' apply false
-    id 'java'
-}
 
 // 1. DISABLE ROOT BUILD
-tasks.named('jar') {
-    enabled = false
-}
+tasks.register('jar') { enabled = false }
 
 allprojects {
-    // Uses the property from gradle.properties
     group = project.property('project-group')
     
     repositories {
@@ -26,127 +18,19 @@ allprojects {
 }
 
 subprojects {
-    // LEAF PROJECT CHECK (The Fix)
-    // If a project has children (like ':platform' has ':platform:papermc'),
-    // it is just a container folder. We skip the build logic for it.
-    if (!project.childProjects.isEmpty()) {
-        return
-    }
-
-    apply plugin: 'java'
-    apply plugin: 'com.gradleup.shadow'
-
-    // --- DYNAMIC VERSIONING LOGIC ---
-    def propName = "mceconomy-${project.name}"
-    
-    // 1. Detect Build Environment
-    String buildNum = System.getenv("BUILD_NUMBER") // Passed from GitHub Action
-    String devRelease = System.getenv("DEV_RELEASE_VERSION") // Passed from GitHub Actions
-    String releaseTag = System.getenv("RELEASE_VERSION") // Passed from GitHub Actions
-    boolean isDevBuild = (buildNum != null && !buildNum.isEmpty())
-    boolean isDevReleaseBuild = (devRelease != null && !devRelease.isEmpty())
-
-    // 2. Calculate the Version String IMMEDIATELY
-    String calculatedVersion = "unspecified"
-    
-    if (releaseTag != null && !releaseTag.isEmpty()) {
-        // RELEASE STRATEGY: yyyy.m.m (e.g., 2026.0.2)
-        calculatedVersion = releaseTag.replace("v", "")
-    } else if (project.hasProperty("${propName}-version")) {
-        def baseVersion = project.property("${propName}-version")
-        def iteration = project.findProperty('project-iteration') ?: "1"
-
-        if (isDevBuild || isDevReleaseBuild) {
-            // TEST VERSION: yyyy.m.m-{iteration} (e.g., 2026.0.2-4)
-            calculatedVersion = "${baseVersion}-${iteration}"
-        } else {
-            // LOCAL BUILD: yyyy.m.m-{iteration}-SNAPSHOT
-            calculatedVersion = "${baseVersion}-${iteration}-SNAPSHOT"
-        }
-    }
-    
-    // 3. Apply it to the project (for metadata)
-    version = calculatedVersion
-    
-    // Debug Log
-    println "[${project.name}] Build detected: " + (isDevBuild ? "CI" : "Local")
-    println "[${project.name}] Final Version: ${calculatedVersion}"
-
-    // --- SHADOW JAR CONFIGURATION ---
-    tasks.named('shadowJar') {
-        // 1. Define finalBaseName
-        String finalBaseName = project.name
-        if (project.hasProperty("${propName}-name")) {
-            finalBaseName = project.property("${propName}-name")
-        }
-        
-        // 2. Set Base Name & Version
-        archiveBaseName.set(finalBaseName)
-        archiveVersion.set(calculatedVersion) // Use our variable, not project.version
-
-        // 3. Set Classifier (Metadata only)
-        archiveClassifier.set('')
-
-        // 4. FORCE FILE NAME (The Ultimate Fix)
-        archiveFileName.set("${finalBaseName}-${calculatedVersion}.jar")
-
-        // 5. CUSTOM OUTPUT DIRECTORY (Engine Only)
-        if (project.path == ':platform:papermc:engine') {
-            String pluginBuildPath = System.getenv("MCPLUGIN_BUILD_PATH")
-            if (pluginBuildPath != null && !pluginBuildPath.isEmpty()) {
-                def outputDir = file(pluginBuildPath)
-                destinationDirectory.set(outputDir)
-
-                // Clean up old versions in the target directory before writing the new one
-                // This prevents 'Plugin-1.0.jar' and 'Plugin-1.1.jar' from co-existing
-                doFirst {
-                    if (outputDir.exists()) {
-                        String baseName = archiveBaseName.get()
-                        outputDir.listFiles()?.each { f ->
-                            // Deletes files starting with "mceconomy-engine-" and ending in ".jar"
-                            if (f.name.startsWith("${baseName}-") && f.name.endsWith(".jar")) {
-                                println "[Clean] Deleting old plugin version: ${f.name}"
-                                f.delete()
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    java {
-        toolchain { languageVersion = JavaLanguageVersion.of(21) }
-    }
-    tasks.withType(JavaCompile).configureEach {
-        options.encoding = 'UTF-8'
-    }
-    tasks.named('jar') {
-        enabled = false
-    }
-    plugins.withId('com.gradleup.shadow') {
-        tasks.named('assemble') { dependsOn('shadowJar') }
-        configurations {
-            apiElements {
-                outgoing.artifacts.clear()
-                outgoing.artifact(tasks.named('shadowJar'))
-            }
-            runtimeElements {
-                outgoing.artifacts.clear()
-                outgoing.artifact(tasks.named('shadowJar'))
-            }
-        }
+    // LEAF PROJECT CHECK
+    // Only apply the module logic to projects that have no children
+    if (project.childProjects.isEmpty()) {
+        apply plugin: 'mceconomy.module'
     }
 }
 
-// 4. PUBLISHING ORDER LOGIC
+// 2. PUBLISHING ORDER LOGIC
 gradle.projectsEvaluated {
-    // 1. SAFE LOOKUP
     def apiProject = findProject(':api')
     def commonProject = findProject(':common')
     def engineProject = findProject(':platform:papermc:engine')
 
-    // 2. ENFORCE ORDER: API -> Common -> Engine
     if (apiProject && commonProject) {
         def apiPublish = apiProject.tasks.findByName('publish')
         def commonPublish = commonProject.tasks.findByName('publish')
@@ -154,7 +38,6 @@ gradle.projectsEvaluated {
         if (apiPublish && commonPublish) {
             commonPublish.mustRunAfter(apiPublish)
             
-            // If engine exists, it must run after common (which already runs after api)
             if (engineProject) {
                 def enginePublish = engineProject.tasks.findByName('publish')
                 if (enginePublish) {
