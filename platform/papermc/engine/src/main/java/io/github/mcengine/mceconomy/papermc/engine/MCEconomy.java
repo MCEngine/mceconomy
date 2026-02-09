@@ -44,6 +44,11 @@ public class MCEconomy extends JavaPlugin {
     private MCExtensionManager extensionManager;
 
     /**
+     * The executor used for running extension-related tasks.
+     */
+    private Executor executor;
+
+    /**
      * Called when the plugin is enabled.
      * Initializes configuration, core components, services, and registers handlers.
      */
@@ -54,17 +59,17 @@ public class MCEconomy extends JavaPlugin {
 
         // 2. Initialize Core Components
         IMCEconomyDB db = setupDatabase();
-        Executor asyncExecutor = setupExecutor();
+        this.executor = setupExecutor();
 
         // Managers must be initialized before the provider now
         this.commandManager = new MCEconomyCommandManager();
         this.listenerManager = new MCEconomyListenerManager(this);
         
         // Initialize Extension Manager
-        this.extensionManager = new MCExtensionManager(this, asyncExecutor);
+        this.extensionManager = new MCExtensionManager();
 
         // Inject everything into the Provider
-        this.provider = new MCEconomyProvider(db, asyncExecutor, commandManager, listenerManager);
+        this.provider = new MCEconomyProvider(db, this.executor, commandManager, listenerManager);
 
         // 3. Register Managers as Bukkit Services
         Bukkit.getServicesManager().register(MCEconomyProvider.class, provider, this, ServicePriority.Normal);
@@ -84,7 +89,7 @@ public class MCEconomy extends JavaPlugin {
         registerListeners();
 
         // 5. Load Extensions
-        extensionManager.loadAllExtensions();
+        extensionManager.loadAllExtensions(this, this.executor);
 
         getLogger().info("MCEconomy Engine has been enabled!");
     }
@@ -122,7 +127,7 @@ public class MCEconomy extends JavaPlugin {
     public void onDisable() {
         // Shutdown extensions first to allow them to use the database before it closes
         if (extensionManager != null) {
-            extensionManager.disableAllExtensions();
+            extensionManager.disableAllExtensions(this, this.executor);
         }
 
         // Shutdown database connections
