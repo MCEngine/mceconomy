@@ -24,11 +24,11 @@ class VersionCalculator {
             def iteration = project.findProperty('project-iteration') ?: "1"
 
             if (isDevBuild || isDevReleaseBuild) {
-                // CI: yyyy.m.m-{iteration}
-                calculatedVersion = "${baseVersion}-${iteration}"
+                // CI: yyyy.m.m-build.{number}
+                calculatedVersion = "${baseVersion}-build.${buildNum}"
             } else {
-                // LOCAL: yyyy.m.m-{iteration}-SNAPSHOT
-                calculatedVersion = "${baseVersion}-${iteration}-SNAPSHOT"
+                // LOCAL: yyyy.m.m-{iteration}
+                calculatedVersion = "${baseVersion}-${iteration}"
             }
         }
 
