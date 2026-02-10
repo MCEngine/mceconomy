@@ -15,6 +15,25 @@ dependencies {
 }
 
 /**
+ * Configure repositories for dependency resolution.
+ */
+repositories {
+    maven {
+        url = uri("https://maven.pkg.github.com/MCEngine/mcextension")
+        credentials {
+            // Priority: Project Property -> Custom Env Var -> GitHub Default Env Var
+            username = project.findProperty("gpr.user") ?: 
+                       System.getenv("USER_GITHUB_NAME") ?: 
+                       System.getenv("GITHUB_ACTOR")
+                       
+            password = project.findProperty("gpr.key") ?: 
+                       System.getenv("USER_GITHUB_TOKEN") ?: 
+                       System.getenv("GITHUB_TOKEN")
+        }
+    }
+}
+
+/**
  * Process resources (plugin.yml) and replace placeholders with gradle properties.
  */
 processResources {
