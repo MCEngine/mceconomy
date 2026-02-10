@@ -158,19 +158,4 @@ public class MCEconomy extends JavaPlugin {
         listenerManager.register(new HandleCoinItem(this, provider));
     }
 
-    /**
-     * Gets the active economy provider.
-     * @return The MCEconomyProvider instance.
-     */
-    public MCEconomyProvider getProvider() {
-        return this.provider;
-    }
-
-    /**
-     * Gets the active extension manager.
-     * @return The MCExtensionManager instance.
-     */
-    public MCExtensionManager getExtensionManager() {
-        return this.extensionManager;
-    }
 }
