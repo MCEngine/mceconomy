@@ -4,7 +4,6 @@
  */
 plugins {
     id 'java-library'
-    id 'maven-publish'
 }
 
 dependencies {
@@ -13,76 +12,6 @@ dependencies {
     // Adds MCExtension as a compile-time only dependency
     implementation 'io.github.mcengine:mcextension:2026.0.3-1-SNAPSHOT'
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
-}
-
-// Define variables for cleaner URL construction
-def gitOwner = project.property('git-org-name')
-def gitRepo = project.property('git-org-repository')
-def gitUrl = project.property('mceconomy-engine-artifact-url')
-
-/**
- * Configure repositories for dependency resolution.
- */
-repositories {
-    maven {
-        url = uri("https://maven.pkg.github.com/MCEngine/mcextension")
-        credentials {
-            // Priority: Project Property -> Custom Env Var -> GitHub Default Env Var
-            username = project.findProperty("gpr.user") ?: 
-                       System.getenv("USER_GITHUB_NAME") ?: 
-                       System.getenv("GITHUB_ACTOR")
-                       
-            password = project.findProperty("gpr.key") ?: 
-                       System.getenv("USER_GITHUB_TOKEN") ?: 
-                       System.getenv("GITHUB_TOKEN")
-        }
-    }
-}
-
-publishing {
-    publications {
-        create('mavenJava', MavenPublication) {
-            artifactId = project.property('mceconomy-engine-artifact-id')
-            artifact shadowJar
-
-            pom {
-                name = project.property('mceconomy-engine-name')
-                description = project.property('mceconomy-engine-artifact-description')
-                url = gitUrl
-
-                developers {
-                    developer {
-                        id = 'jetsadawijit'
-                        url = 'https://jetsadawijit.github.io'
-                    }
-                }
-
-                scm {
-                    connection = "scm:git:git://github.com/${gitOwner}/${gitRepo}.git"
-                    developerConnection = "scm:git:ssh://github.com/${gitOwner}/${gitRepo}.git"
-                    url = gitUrl
-                }
-            }
-        }
-    }
-
-    repositories {
-        maven {
-            name = "GitHubPackages"
-            url = uri("https://maven.pkg.github.com/${gitOwner}/${gitRepo}")
-
-            credentials {
-                // Shared credential logic for consistency across the project
-                username = project.findProperty("gpr.user") ?: 
-                           System.getenv("USER_GITHUB_NAME") ?: 
-                           System.getenv("GITHUB_ACTOR")
-                           
-                password = project.findProperty("gpr.key") ?: 
-                           System.getenv("USER_GITHUB_TOKEN") ?: 
-                           System.getenv("GITHUB_TOKEN")
-            }
-        }
-    }
 }
 
 /**
