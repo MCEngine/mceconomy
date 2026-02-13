@@ -65,7 +65,9 @@ publishing {
 
         maven {
             name = "MavenCentral"
-            url = uri(project.version.toString().endsWith('-SNAPSHOT')
+            // Treat any dash-suffixed version (e.g., 2026.x.x-<iteration>) as snapshot
+            def isSnapshot = project.version.toString().contains('-')
+            url = uri(isSnapshot
                 ? 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
                 : 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/')
 
