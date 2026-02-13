@@ -19,6 +19,8 @@ dependencies {
 def gitOwner = project.property('git-org-name')
 def gitRepo = project.property('git-org-repository')
 def gitUrl = project.property('mceconomy-api-artifact-url')
+def mavenCentralUser = System.getenv('MAVEN_CENTRAL_USERNAME') ?: ''
+def mavenCentralPass = System.getenv('MAVEN_CENTRAL_PASSWORD') ?: ''
 
 publishing {
     publications {
@@ -57,5 +59,23 @@ publishing {
                 password = System.getenv("USER_GITHUB_TOKEN")
             }
         }
+
+        maven {
+            name = "MavenCentral"
+            url = uri(project.version.toString().endsWith('-SNAPSHOT')
+                ? 'https://s01.oss.sonatype.org/content/repositories/snapshots/'
+                : 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/')
+
+            credentials {
+                username = mavenCentralUser
+                password = mavenCentralPass
+            }
+        }
+    }
+}
+
+tasks.withType(PublishToMavenRepository).configureEach {
+    if (repository.name == "MavenCentral") {
+        onlyIf { mavenCentralUser && mavenCentralPass }
     }
 }
