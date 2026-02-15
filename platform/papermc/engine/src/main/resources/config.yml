@@ -21,6 +21,9 @@ db:
   #   2) host plugin config git.<provider>.token (git.github.token / git.gitlab.token)
   #   3) host plugin config git.token
 git:
+  type: github
+  org: MCEngine
+  repo: mceconomy
   token:
 
   github:

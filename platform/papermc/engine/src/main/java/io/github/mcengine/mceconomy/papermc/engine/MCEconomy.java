@@ -10,11 +10,14 @@ import io.github.mcengine.mceconomy.common.database.sqlite.MCEconomySQLite;
 import io.github.mcengine.mceconomy.common.listener.MCEconomyListenerManager;
 import io.github.mcengine.mceconomy.common.listener.util.*;
 import io.github.mcengine.mceconomy.common.tabcompleter.MCEconomyTabCompleter;
+import io.github.mcengine.mcutil.MCUtil;
+import io.papermc.paper.plugin.configuration.PluginMeta;
 import org.bukkit.Bukkit;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.io.IOException;
 import java.util.concurrent.Executor;
 
 /**
@@ -91,6 +94,11 @@ public class MCEconomy extends JavaPlugin {
         // 5. Load Extensions
         extensionManager.loadAllExtensions(this, this.executor);
 
+        // 6. Check for updates against remote git provider
+        if (isNewVersionAvailable()) {
+            getLogger().warning("A newer version of MCEconomy is available. Please update to the latest release.");
+        }
+
         getLogger().info("MCEconomy Engine has been enabled!");
     }
 
@@ -156,6 +164,57 @@ public class MCEconomy extends JavaPlugin {
     private void registerListeners() {
         listenerManager.register(new HandleEnsurePlayerExist(provider));
         listenerManager.register(new HandleCoinItem(this, provider));
+    }
+
+    /**
+     * Checks whether a newer version exists on the configured git provider.
+     */
+    private boolean isNewVersionAvailable() {
+        PluginMeta pluginMeta = getPluginMeta();
+        String currentVersion = pluginMeta != null ? pluginMeta.getVersion() : getDescription().getVersion();
+        String gitType = getConfig().getString("git.type", "github");
+        String org = getConfig().getString("git.org", "MCEngine");
+        String repo = getConfig().getString("git.repo", "mceconomy");
+        String token = resolveGitToken(gitType);
+
+        try {
+            return MCUtil.compareVersion(gitType, currentVersion, org, repo, token);
+        } catch (IllegalArgumentException e) {
+            getLogger().warning("Unsupported git provider configured: " + gitType);
+        } catch (IOException e) {
+            getLogger().warning("Failed to check remote version: " + e.getMessage());
+        }
+        return false;
+    }
+
+    private String resolveGitToken(String gitType) {
+        String envOverride = null;
+        if ("github".equalsIgnoreCase(gitType)) {
+            envOverride = System.getenv("USER_GITHUB_TOKEN");
+            if (envOverride == null || envOverride.isEmpty()) {
+                envOverride = System.getenv("GITHUB_TOKEN");
+            }
+            String configured = getConfig().getString("git.github.token");
+            if (configured != null && !configured.isEmpty()) {
+                return configured;
+            }
+        } else if ("gitlab".equalsIgnoreCase(gitType)) {
+            envOverride = System.getenv("USER_GITLAB_TOKEN");
+            if (envOverride == null || envOverride.isEmpty()) {
+                envOverride = System.getenv("GITLAB_TOKEN");
+            }
+            String configured = getConfig().getString("git.gitlab.token");
+            if (configured != null && !configured.isEmpty()) {
+                return configured;
+            }
+        }
+
+        if (envOverride != null && !envOverride.isEmpty()) {
+            return envOverride;
+        }
+
+        String fallback = getConfig().getString("git.token");
+        return fallback != null ? fallback : "";
     }
 
 }
