@@ -20,7 +20,7 @@ class VersionCalculator {
             // RELEASE: yyyy.m.m
             calculatedVersion = releaseTag.replace("v", "")
         } else if (project.hasProperty("${propName}-version")) {
-            def baseVersion = project.property("${propName}-version")
+            def baseVersion = project.property("project-version")
             def iteration = project.findProperty('project-iteration') ?: "1"
 
             if (isDevBuild || isDevReleaseBuild) {

@@ -10,7 +10,8 @@ dependencies {
     api project(':api')
     api project(':common')
     // Adds MCExtension as a compile-time only dependency
-    implementation 'io.github.mcengine:mcextension:2026.0.3-1-SNAPSHOT'
+    implementation 'io.github.mcengine:mcextension:2026.0.3-4'
+    implementation 'io.github.mcengine:mcutil:2026.0.3-2'
     compileOnly 'io.papermc.paper:paper-api:1.21.11-R0.1-SNAPSHOT'
 }
 
@@ -20,6 +21,19 @@ dependencies {
 repositories {
     maven {
         url = uri("https://maven.pkg.github.com/MCEngine/mcextension")
+        credentials {
+            // Priority: Project Property -> Custom Env Var -> GitHub Default Env Var
+            username = project.findProperty("gpr.user") ?: 
+                       System.getenv("USER_GITHUB_NAME") ?: 
+                       System.getenv("GITHUB_ACTOR")
+                       
+            password = project.findProperty("gpr.key") ?: 
+                       System.getenv("USER_GITHUB_TOKEN") ?: 
+                       System.getenv("GITHUB_TOKEN")
+        }
+    }
+    maven {
+        url = uri("https://maven.pkg.github.com/MCEngine/mcutil")
         credentials {
             // Priority: Project Property -> Custom Env Var -> GitHub Default Env Var
             username = project.findProperty("gpr.user") ?: 

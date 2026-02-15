@@ -56,6 +56,10 @@ tasks.named('shadowJar') {
                 }
             }
         }
+
+        // Relocate external libs to avoid classpath conflicts
+        relocate 'io.github.mcengine.mcextension', 'io.github.mcengine.mceconomy.mcextension'
+        relocate 'io.github.mcengine.mcutil', 'io.github.mcengine.mceconomy.mcutil'
     }
 }
 
