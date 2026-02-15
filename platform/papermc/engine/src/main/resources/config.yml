@@ -16,6 +16,19 @@ db:
     password: mceconomy
     ssl: "false"
 
+# token resolution order:
+  #   1) env USER_GITHUB_TOKEN / USER_GITLAB_TOKEN
+  #   2) host plugin config git.<provider>.token (git.github.token / git.gitlab.token)
+  #   3) host plugin config git.token
+git:
+  token:
+
+  github:
+    token:
+
+  gitlab:
+    token:
+
 coin:
   texture: eyJ0ZXh0dXJlcyI6eyJTS0lOIjp7InVybCI6Imh0dHA6Ly90ZXh0dXJlcy5taW5lY3JhZnQubmV0L3RleHR1cmUvYWFmMGQ4ZDc5NGEzYTRhNWUyMGE1MjkyZWQyNTUxMzRmNzZkNGYzYTU1NTZmYzdmNDI2ZDI3YjI0NzQ3NGQ2NyJ9fX0=
 copper:
