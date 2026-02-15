@@ -39,7 +39,7 @@ tasks.named('shadowJar') {
 
     // --- ENGINE SPECIFIC CLEANUP LOGIC ---
     if (project.path == ':platform:papermc:engine') {
-        String pluginBuildPath = System.getenv("MCPLUGIN_BUILD_PATH")
+        String pluginBuildPath = System.getenv('MCPLUGIN_BUILD_PATH')
         if (pluginBuildPath != null && !pluginBuildPath.isEmpty()) {
             def outputDir = file(pluginBuildPath)
             destinationDirectory.set(outputDir)
@@ -48,7 +48,7 @@ tasks.named('shadowJar') {
                 if (outputDir.exists()) {
                     String baseName = archiveBaseName.get()
                     outputDir.listFiles()?.each { f ->
-                        if (f.name.startsWith("${baseName}-") && f.name.endsWith(".jar")) {
+                        if (f.name.startsWith("${baseName}-") && f.name.endsWith('.jar')) {
                             println "[Clean] Deleting old plugin version: ${f.name}"
                             f.delete()
                         }

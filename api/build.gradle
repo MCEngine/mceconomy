@@ -51,7 +51,7 @@ publishing {
 
     repositories {
         maven {
-            name = "GitHubPackages"
+            name = 'GitHubPackages'
             url = uri("https://maven.pkg.github.com/${gitOwner}/${gitRepo}")
 
             credentials {
@@ -61,7 +61,7 @@ publishing {
         }
 
         maven {
-            name = "MavenCentral"
+            name = 'MavenCentral'
             // Treat any dash-suffixed version (e.g., 2026.x.x-<iteration>) as snapshot
             def isSnapshot = project.version.toString().contains('-')
             url = uri(isSnapshot
@@ -77,7 +77,7 @@ publishing {
 }
 
 tasks.withType(PublishToMavenRepository).configureEach {
-    if (repository.name == "MavenCentral") {
+    if (repository.name == 'MavenCentral') {
         onlyIf { mavenCentralUser && mavenCentralPass }
     }
 }
