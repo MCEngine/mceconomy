@@ -171,7 +171,7 @@ public class MCEconomy extends JavaPlugin {
      */
     private boolean isNewVersionAvailable() {
         PluginMeta pluginMeta = getPluginMeta();
-        String currentVersion = pluginMeta != null ? pluginMeta.getVersion() : getDescription().getVersion();
+        String currentVersion = pluginMeta != null ? pluginMeta.getVersion() : "unspecified";
         String gitType = getConfig().getString("git.type", "github");
         String org = getConfig().getString("git.org", "MCEngine");
         String repo = getConfig().getString("git.repo", "mceconomy");
