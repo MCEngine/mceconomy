@@ -1,4 +1,4 @@
-rootProject.name = "mceconomy"
+rootProject.name = 'mceconomy'
 
 // Standard modules
 include 'api', 'common'

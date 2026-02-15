@@ -7,20 +7,20 @@ class VersionCalculator {
         String propName = "mceconomy-${project.name}"
         
         // 1. Detect Build Environment
-        String buildNum = System.getenv("BUILD_NUMBER")
-        String devRelease = System.getenv("DEV_RELEASE_VERSION")
-        String releaseTag = System.getenv("RELEASE_VERSION")
+        String buildNum = System.getenv('BUILD_NUMBER')
+        String devRelease = System.getenv('DEV_RELEASE_VERSION')
+        String releaseTag = System.getenv('RELEASE_VERSION')
         boolean isDevBuild = (buildNum != null && !buildNum.isEmpty())
         boolean isDevReleaseBuild = (devRelease != null && !devRelease.isEmpty())
 
         // 2. Calculate
-        String calculatedVersion = "unspecified"
-        
+        String calculatedVersion = 'unspecified'
+
         if (releaseTag != null && !releaseTag.isEmpty()) {
             // RELEASE: yyyy.m.m
-            calculatedVersion = releaseTag.replace("v", "")
-        } else if (project.hasProperty("${propName}-version")) {
-            def baseVersion = project.property("project-version")
+            calculatedVersion = releaseTag.replace('v', '')
+        } else if (project.hasProperty('project-version')) {
+            def baseVersion = project.property('project-version')
             def iteration = project.findProperty('project-iteration') ?: "1"
 
             if (isDevBuild || isDevReleaseBuild) {
@@ -33,7 +33,7 @@ class VersionCalculator {
         }
 
         // Debug Log
-        println "[${project.name}] Build detected: " + (isDevBuild ? "CI" : "Local")
+        println "[${project.name}] Build detected: " + (isDevBuild ? 'CI' : 'Local')
         println "[${project.name}] Final Version: ${calculatedVersion}"
         
         return calculatedVersion
