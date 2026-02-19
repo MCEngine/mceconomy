@@ -27,8 +27,15 @@ public class MCEconomySQLite implements IMCEconomyDB {
      * @param plugin The Bukkit/Spigot plugin instance.
      */
     public MCEconomySQLite(Plugin plugin) {
-        File dataFolder = new File(plugin.getDataFolder(), "mceconomy.db");
-        if (!plugin.getDataFolder().exists()) plugin.getDataFolder().mkdirs();
+        String dbPath = envOrConfig("MCENGINE_MCECONOMY_SQLITE_PATH",
+                                    "MCENGINE_SQLITE_PATH",
+                                    "db.sqlite.path",
+                                    plugin,
+                                    "mceconomy.db");
+
+        File dataFolder = resolvePath(plugin, dbPath);
+        File parentDir = dataFolder.getParentFile();
+        if (parentDir != null && !parentDir.exists()) parentDir.mkdirs();
 
         try {
             Class.forName("org.sqlite.JDBC");
@@ -37,6 +44,33 @@ public class MCEconomySQLite implements IMCEconomyDB {
         } catch (Exception e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Resolve configuration by preferring environment variables then falling back to plugin config.
+     */
+    private String envOrConfig(String primaryEnv, String secondaryEnv, String configPath, Plugin plugin, String defaultValue) {
+        String value = System.getenv(primaryEnv);
+        if (value != null && !value.isEmpty()) return value;
+
+        value = System.getenv(secondaryEnv);
+        if (value != null && !value.isEmpty()) return value;
+
+        value = plugin.getConfig().getString(configPath);
+        if (value != null && !value.isEmpty()) return value;
+
+        return defaultValue;
+    }
+
+    /**
+     * Resolve a potentially absolute path; if relative, place inside the plugin data folder.
+     */
+    private File resolvePath(Plugin plugin, String path) {
+        File candidate = new File(path);
+        if (candidate.isAbsolute()) {
+            return candidate;
+        }
+        return new File(plugin.getDataFolder(), path);
     }
 
     /**
