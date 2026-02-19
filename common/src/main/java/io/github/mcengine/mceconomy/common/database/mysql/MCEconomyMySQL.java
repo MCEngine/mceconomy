@@ -23,12 +23,12 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      * @param plugin The Bukkit/Spigot plugin instance.
      */
     public MCEconomyMySQL(Plugin plugin) {
-        String dbUser = plugin.getConfig().getString("db.mysql.user");
-        String dbPass = plugin.getConfig().getString("db.mysql.password");
-        String dbHost = plugin.getConfig().getString("db.mysql.host");
-        String dbName = plugin.getConfig().getString("db.mysql.database");
-        String dbPort = plugin.getConfig().getString("db.mysql.port", "3306");
-        String dbSsl = plugin.getConfig().getString("db.mysql.ssl", "false");
+        String dbUser = envOrConfig("MCENGINE_MCECONOMY_MYSQL_USER", "MCENGINE_MYSQL_USER", "db.mysql.user", plugin, null);
+        String dbPass = envOrConfig("MCENGINE_MCECONOMY_MYSQL_PASS", "MCENGINE_MYSQL_PASS", "db.mysql.password", plugin, null);
+        String dbHost = envOrConfig("MCENGINE_MCECONOMY_MYSQL_HOST", "MCENGINE_MYSQL_HOST", "db.mysql.host", plugin, null);
+        String dbName = envOrConfig("MCENGINE_MCECONOMY_MYSQL_DATABASE_NAME", "MCENGINE_MYSQL_DATABASE_NAME", "db.mysql.database", plugin, null);
+        String dbPort = envOrConfig("MCENGINE_MCECONOMY_MYSQL_PORT", "MCENGINE_MYSQL_PORT", "db.mysql.port", plugin, "3306");
+        String dbSsl = envOrConfig("MCENGINE_MCECONOMY_MYSQL_SSL", "MCENGINE_MYSQL_SSL", "db.mysql.ssl", plugin, "false");
 
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl("jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName + "?useSSL=" + dbSsl);
@@ -53,6 +53,22 @@ public class MCEconomyMySQL implements IMCEconomyDB {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    /**
+     * Resolve configuration by preferring environment variables then falling back to plugin config.
+     */
+    private String envOrConfig(String primaryEnv, String secondaryEnv, String configPath, Plugin plugin, String defaultValue) {
+        String value = System.getenv(primaryEnv);
+        if (value != null && !value.isEmpty()) return value;
+
+        value = System.getenv(secondaryEnv);
+        if (value != null && !value.isEmpty()) return value;
+
+        value = plugin.getConfig().getString(configPath);
+        if (value != null && !value.isEmpty()) return value;
+
+        return defaultValue;
     }
 
     /**
