@@ -5,6 +5,7 @@ import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import org.bukkit.plugin.Plugin;
 import java.io.File;
 import java.sql.*;
+import java.util.Objects;
 
 /**
  * SQLite implementation for MCEconomy.
@@ -130,8 +131,9 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public int getCoin(String accountUuid, String accountType, CurrencyType coinType) {
         synchronized (lock) {
+            String col = columnName(coinType);
             ensureAccountExist(accountUuid, accountType);
-            String sql = "SELECT " + coinType.getName() + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
+            String sql = "SELECT " + col + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setString(1, accountUuid);
                 pstmt.setString(2, accountType);
@@ -156,8 +158,10 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public boolean setCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         synchronized (lock) {
+            if (amount < 0) return false;
+            String col = columnName(coinType);
             ensureAccountExist(accountUuid, accountType);
-            String sql = "UPDATE economy_accounts SET " + coinType.getName() + " = ? WHERE account_uuid = ? AND account_type = ?";
+            String sql = "UPDATE economy_accounts SET " + col + " = ? WHERE account_uuid = ? AND account_type = ?";
             try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
                 pstmt.setInt(1, amount);
                 pstmt.setString(2, accountUuid);
@@ -183,7 +187,9 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public boolean addCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         synchronized (lock) {
-            return setCoin(accountUuid, accountType, coinType, getCoin(accountUuid, accountType, coinType) + amount);
+            if (amount <= 0) return false;
+            int newAmount = getCoin(accountUuid, accountType, coinType) + amount;
+            return setCoin(accountUuid, accountType, coinType, newAmount);
         }
     }
 
@@ -200,12 +206,21 @@ public class MCEconomySQLite implements IMCEconomyDB {
     @Override
     public boolean minusCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
         synchronized (lock) {
-            int currentBalance = getCoin(accountUuid, accountType, coinType);
-            if (currentBalance >= amount) {
-                return setCoin(accountUuid, accountType, coinType, currentBalance - amount);
+            if (amount <= 0) return false;
+            String col = columnName(coinType);
+            String sql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? " +
+                         "WHERE account_uuid = ? AND account_type = ? AND " + col + " >= ?";
+            try (PreparedStatement pstmt = conn.prepareStatement(sql)) {
+                pstmt.setInt(1, amount);
+                pstmt.setString(2, accountUuid);
+                pstmt.setString(3, accountType);
+                pstmt.setInt(4, amount);
+                return pstmt.executeUpdate() > 0;
+            } catch (SQLException e) {
+                e.printStackTrace();
+                return false;
             }
         }
-        return false;
     }
 
     /**
@@ -217,20 +232,53 @@ public class MCEconomySQLite implements IMCEconomyDB {
      * @param receiverType The account type of the receiver.
      * @param coinType     The currency type.
      * @param amount       The amount to transfer.
-     * @return true if transfer succeeded, false if sender has insufficient funds.
+     * @return true if the transfer was successful, false on error.
      */
     @Override
     public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, CurrencyType coinType, int amount) {
         synchronized (lock) {
-            int senderBalance = getCoin(senderUuid, senderType, coinType);
-            if (senderBalance >= amount) {
-                boolean removed = setCoin(senderUuid, senderType, coinType, senderBalance - amount);
-                if (removed) {
-                    return addCoin(receiverUuid, receiverType, coinType, amount);
+            if (amount <= 0) return false;
+            String col = columnName(coinType);
+            boolean prevAutoCommit = true;
+            try {
+                prevAutoCommit = conn.getAutoCommit();
+                conn.setAutoCommit(false);
+
+                ensureAccountExist(senderUuid, senderType);
+                ensureAccountExist(receiverUuid, receiverType);
+
+                String withdrawSql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? " +
+                                     "WHERE account_uuid = ? AND account_type = ? AND " + col + " >= ?";
+                try (PreparedStatement withdraw = conn.prepareStatement(withdrawSql)) {
+                    withdraw.setInt(1, amount);
+                    withdraw.setString(2, senderUuid);
+                    withdraw.setString(3, senderType);
+                    withdraw.setInt(4, amount);
+                    if (withdraw.executeUpdate() == 0) {
+                        conn.rollback();
+                        conn.setAutoCommit(prevAutoCommit);
+                        return false;
+                    }
                 }
+
+                String depositSql = "UPDATE economy_accounts SET " + col + " = " + col + " + ? WHERE account_uuid = ? AND account_type = ?";
+                try (PreparedStatement deposit = conn.prepareStatement(depositSql)) {
+                    deposit.setInt(1, amount);
+                    deposit.setString(2, receiverUuid);
+                    deposit.setString(3, receiverType);
+                    deposit.executeUpdate();
+                }
+
+                conn.commit();
+                conn.setAutoCommit(prevAutoCommit);
+                return true;
+            } catch (SQLException e) {
+                try { conn.rollback(); } catch (SQLException ignored) {}
+                try { conn.setAutoCommit(prevAutoCommit); } catch (SQLException ignored) {}
+                e.printStackTrace();
+                return false;
             }
         }
-        return false;
     }
 
     /**
@@ -241,5 +289,18 @@ public class MCEconomySQLite implements IMCEconomyDB {
         synchronized (lock) {
             try { if (conn != null) conn.close(); } catch (SQLException e) { e.printStackTrace(); }
         }
+    }
+
+    /**
+     * Resolve the trusted column name for a currency type.
+     */
+    private String columnName(CurrencyType type) {
+        Objects.requireNonNull(type, "currency type");
+        return switch (type) {
+            case COIN -> "coin";
+            case COPPER -> "copper";
+            case SILVER -> "silver";
+            case GOLD -> "gold";
+        };
     }
 }
