@@ -6,6 +6,7 @@ import io.github.mcengine.mceconomy.api.database.IMCEconomyDB;
 import io.github.mcengine.mceconomy.api.enums.CurrencyType;
 import org.bukkit.plugin.Plugin;
 import java.sql.*;
+import java.util.Objects;
 
 /**
  * MySQL implementation for MCEconomy.
@@ -126,9 +127,9 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public int getCoin(String accountUuid, String accountType, CurrencyType coinType) {
+        String col = columnName(coinType);
         ensureAccountExist(accountUuid, accountType);
-        // Using enum getName() is safe here as it returns trusted string values
-        String sql = "SELECT " + coinType.getName() + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
+        String sql = "SELECT " + col + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setString(1, accountUuid);
@@ -153,8 +154,10 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean setCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
+        if (amount < 0) return false;
+        String col = columnName(coinType);
         ensureAccountExist(accountUuid, accountType);
-        String sql = "UPDATE economy_accounts SET " + coinType.getName() + " = ? WHERE account_uuid = ? AND account_type = ?";
+        String sql = "UPDATE economy_accounts SET " + col + " = ? WHERE account_uuid = ? AND account_type = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
             pstmt.setInt(1, amount);
@@ -179,9 +182,9 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean addCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
-        // Optimized atomic update
+        if (amount <= 0) return false;
         ensureAccountExist(accountUuid, accountType);
-        String col = coinType.getName();
+        String col = columnName(coinType);
         String sql = "UPDATE economy_accounts SET " + col + " = " + col + " + ? WHERE account_uuid = ? AND account_type = ?";
         try (Connection conn = dataSource.getConnection();
              PreparedStatement pstmt = conn.prepareStatement(sql)) {
@@ -208,23 +211,21 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean minusCoin(String accountUuid, String accountType, CurrencyType coinType, int amount) {
-        int currentBalance = getCoin(accountUuid, accountType, coinType);
-        if (currentBalance >= amount) {
-            // Safe subtraction
-            String col = coinType.getName();
-            String sql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? WHERE account_uuid = ? AND account_type = ?";
-            try (Connection conn = dataSource.getConnection();
-                 PreparedStatement pstmt = conn.prepareStatement(sql)) {
-                pstmt.setInt(1, amount);
-                pstmt.setString(2, accountUuid);
-                pstmt.setString(3, accountType);
-                pstmt.executeUpdate();
-                return true;
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+        if (amount <= 0) return false;
+        String col = columnName(coinType);
+        String sql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? " +
+                     "WHERE account_uuid = ? AND account_type = ? AND " + col + " >= ?";
+        try (Connection conn = dataSource.getConnection();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            pstmt.setInt(1, amount);
+            pstmt.setString(2, accountUuid);
+            pstmt.setString(3, accountType);
+            pstmt.setInt(4, amount);
+            return pstmt.executeUpdate() > 0;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return false;
         }
-        return false;
     }
 
     /**
@@ -240,51 +241,61 @@ public class MCEconomyMySQL implements IMCEconomyDB {
      */
     @Override
     public boolean sendCoin(String senderUuid, String senderType, String receiverUuid, String receiverType, CurrencyType coinType, int amount) {
+        if (amount <= 0) return false;
+        String col = columnName(coinType);
         try (Connection conn = dataSource.getConnection()) {
-            conn.setAutoCommit(false); // Start Transaction
+            boolean prevAutoCommit = conn.getAutoCommit();
+            conn.setAutoCommit(false);
+            try {
+                ensureAccountExist(senderUuid, senderType);
+                ensureAccountExist(receiverUuid, receiverType);
 
-            String col = coinType.getName();
-
-            // 1. Check Balance
-            int balance = 0;
-            String checkSql = "SELECT " + col + " FROM economy_accounts WHERE account_uuid = ? AND account_type = ?";
-            try (PreparedStatement check = conn.prepareStatement(checkSql)) {
-                check.setString(1, senderUuid);
-                check.setString(2, senderType);
-                try (ResultSet rs = check.executeQuery()) {
-                    if (rs.next()) balance = rs.getInt(1);
+                String withdrawSql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? " +
+                                     "WHERE account_uuid = ? AND account_type = ? AND " + col + " >= ?";
+                try (PreparedStatement withdraw = conn.prepareStatement(withdrawSql)) {
+                    withdraw.setInt(1, amount);
+                    withdraw.setString(2, senderUuid);
+                    withdraw.setString(3, senderType);
+                    withdraw.setInt(4, amount);
+                    if (withdraw.executeUpdate() == 0) {
+                        conn.rollback();
+                        return false;
+                    }
                 }
-            }
 
-            if (balance < amount) {
+                String depositSql = "UPDATE economy_accounts SET " + col + " = " + col + " + ? WHERE account_uuid = ? AND account_type = ?";
+                try (PreparedStatement deposit = conn.prepareStatement(depositSql)) {
+                    deposit.setInt(1, amount);
+                    deposit.setString(2, receiverUuid);
+                    deposit.setString(3, receiverType);
+                    deposit.executeUpdate();
+                }
+
+                conn.commit();
+                return true;
+            } catch (SQLException e) {
                 conn.rollback();
-                return false;
+                throw e;
+            } finally {
+                conn.setAutoCommit(prevAutoCommit);
             }
-
-            // 2. Withdraw
-            String withdrawSql = "UPDATE economy_accounts SET " + col + " = " + col + " - ? WHERE account_uuid = ? AND account_type = ?";
-            try (PreparedStatement withdraw = conn.prepareStatement(withdrawSql)) {
-                withdraw.setInt(1, amount);
-                withdraw.setString(2, senderUuid);
-                withdraw.setString(3, senderType);
-                withdraw.executeUpdate();
-            }
-
-            // 3. Deposit (ensureAccountExist logic should ideally be pre-checked, but assuming simplified flow)
-            String depositSql = "UPDATE economy_accounts SET " + col + " = " + col + " + ? WHERE account_uuid = ? AND account_type = ?";
-            try (PreparedStatement deposit = conn.prepareStatement(depositSql)) {
-                deposit.setInt(1, amount);
-                deposit.setString(2, receiverUuid);
-                deposit.setString(3, receiverType);
-                deposit.executeUpdate();
-            }
-
-            conn.commit(); // Commit Transaction
-            return true;
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
-        return false;
+    }
+
+    /**
+     * Resolve the trusted column name for a currency type.
+     */
+    private String columnName(CurrencyType type) {
+        Objects.requireNonNull(type, "currency type");
+        return switch (type) {
+            case COIN -> "coin";
+            case COPPER -> "copper";
+            case SILVER -> "silver";
+            case GOLD -> "gold";
+        };
     }
 
     /**
